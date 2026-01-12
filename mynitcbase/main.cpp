@@ -4,33 +4,173 @@
 #include "FrontendInterface/FrontendInterface.h"
 #include <iostream>
 
-int main(int argc, char *argv[]) 
+//LEARN THE SQL COMMANDS TO CREATE THE FOLLOWING TABLES:
+//CREATE TABLE Students(RollNumber STR, Name STR, Marks NUM, Class STR)
+//Events(id NUM, title STR, location STR)
+//Locations(name STR, capacity NUM) 
+//Participants(regNo NUM, event STR)
 
+// exercise 1:
+// run the main.cpp 
+// when you just print it, it doesnt print the last 3 attributes 
+// have to access the next block to print those. 
+
+
+int exercise1() 
 {
-  Disk disk_run; //a temporary copy of the disk contents before the starting of a new session. 
-  //if the system has a forced shutdown , the previous state of the disk is not lost.
+  Disk disk_run;
+  // create objects for the relation catalog and attribute catalog
+  RecBuffer relCatBuffer(RELCAT_BLOCK);
+  HeadInfo relCatHeader;
+  // load the headers of both the blocks into relCatHeader and attrCatHeader.
+  // (we will implement these functions later)
+  relCatBuffer.getHeader(&relCatHeader);
   
-  unsigned char buffer1[BLOCK_SIZE];
-  Disk::readBlock(buffer1,0);
-
-  for (int i=0;i<10;i++)
+  for (int i=0; i< relCatHeader.numEntries; i++) /* i = 0 to total relation count */ 
   {
-    std::cout<<(int)buffer1[i] <<", ";
+        Attribute relCatRecord[RELCAT_NO_ATTRS]; // will store the record from the relation catalog
+
+        relCatBuffer.getRecord(relCatRecord, i);
+
+        printf("Relation: %s\n", relCatRecord[RELCAT_REL_NAME_INDEX].sVal);
+        int curr = ATTRCAT_BLOCK;
+
+        while (curr!=-1)
+        {
+            RecBuffer CurrAtBuf(curr);
+            HeadInfo attrcathead;
+            CurrAtBuf.getHeader(&attrcathead);
+
+            for (int j=0 ; j< attrcathead.numEntries;j++) /* j = 0 to number of entries in the attribute catalog */ 
+            {
+                  // declare attrCatRecord and load the attribute catalog entry into it
+
+                  Attribute attrCatRecord[ATTRCAT_NO_ATTRS];
+                  CurrAtBuf.getRecord(attrCatRecord, j);
+
+                  if (strcmp(attrCatRecord[ATTRCAT_REL_NAME_INDEX].sVal,relCatRecord[RELCAT_REL_NAME_INDEX].sVal)==0)   //sVal is string value of union attribute
+                    /* attribute catalog entry corresponds to the current relation */
+                    {
+                      const char *attrType = attrCatRecord[ATTRCAT_ATTR_TYPE_INDEX].nVal == NUMBER ? "NUM" : "STR";
+                      printf("  %s: %s\n", attrCatRecord[ATTRCAT_ATTR_NAME_INDEX].sVal/* get the attribute name */, attrType);
+                    } 
+            }
+            curr=attrcathead.rblock;  //move to next block of attribute catalog
+        }
+  }
+  return 0;
+}
+
+//exercise 2:
+//printing the relation again- just show schema
+// need to change class to batch 
+
+
+int exercise2() 
+{
+  Disk disk_run;
+
+  // create objects for the relation catalog and attribute catalog
+  RecBuffer relCatBuffer(RELCAT_BLOCK);
+  RecBuffer attrCatBuffer(ATTRCAT_BLOCK);
+
+  HeadInfo relCatHeader;
+  HeadInfo attrCatHeader;
+
+  // load the headers of both the blocks into relCatHeader and attrCatHeader.
+  // (we will implement these functions later)
+  relCatBuffer.getHeader(&relCatHeader);
+  attrCatBuffer.getHeader(&attrCatHeader);
+
+  for (int k=0 ; k< attrCatHeader.numEntries;k++)
+  {
+
+      Attribute x[RELCAT_NO_ATTRS];
+      attrCatBuffer.getRecord(x,k);
+
+      if (strcmp(x[ATTRCAT_REL_NAME_INDEX].sVal, "Students")==0 && strcmp(x[ATTRCAT_ATTR_NAME_INDEX].sVal, "Class")==0)
+      {
+        strcpy(x[ATTRCAT_ATTR_NAME_INDEX].sVal, "Batch");
+
+        attrCatBuffer.setRecord(x,k);
+      }
   }
 
-  unsigned char buffer[BLOCK_SIZE];
-  Disk::readBlock(buffer,7000); //reading contents of block 7000 into "buffer' array
-  char message[]= "hello";
+  for (int i=0; i< relCatHeader.numEntries; i++) /* i = 0 to total relation count */ {
 
-  memcpy(buffer+20,message,6);
-  Disk::writeBlock(buffer,7000); //writing the contents of buffer into block 7000
+    Attribute relCatRecord[RELCAT_NO_ATTRS]; // will store the record from the relation catalog
 
-  unsigned char buff[BLOCK_SIZE];
-  char msg[6];
+    relCatBuffer.getRecord(relCatRecord, i);
 
-  Disk::readBlock(buff,7000);
-  memcpy(msg,buff+20,6);
-  std::cout << "\n" << msg << "\n";
+    printf("Relation: %s\n", relCatRecord[RELCAT_REL_NAME_INDEX].sVal);
+
+    for (int j=0 ; j< attrCatHeader.numEntries;j++) /* j = 0 to number of entries in the attribute catalog */ {
+
+      // declare attrCatRecord and load the attribute catalog entry into it
+
+      Attribute attrCatRecord[ATTRCAT_NO_ATTRS];
+      attrCatBuffer.getRecord(attrCatRecord, j);
+
+      if (strcmp(attrCatRecord[ATTRCAT_REL_NAME_INDEX].sVal,relCatRecord[RELCAT_REL_NAME_INDEX].sVal)==0)   //sVal is string value of union attribute
+        /* attribute catalog entry corresponds to the current relation */
+        {
+          const char *attrType = attrCatRecord[ATTRCAT_ATTR_TYPE_INDEX].nVal == NUMBER ? "NUM" : "STR";
+          printf("  %s: %s\n", attrCatRecord[ATTRCAT_ATTR_NAME_INDEX].sVal/* get the attribute name */, attrType);
+        } 
+    }
+    printf("\n");
+  }
+
+  return 0;
+}
+
+
+int main(int argc, char *argv[]) {
+  Disk disk_run;
+
+  // create objects for the relation catalog and attribute catalog
+  RecBuffer relCatBuffer(RELCAT_BLOCK);
+  RecBuffer attrCatBuffer(ATTRCAT_BLOCK);
+
+  HeadInfo relCatHeader;
+  HeadInfo attrCatHeader;
+
+  // load the headers of both the blocks into relCatHeader and attrCatHeader.
+  // (we will implement these functions later)
+  relCatBuffer.getHeader(&relCatHeader);
+  attrCatBuffer.getHeader(&attrCatHeader);
+
+  for (int i=0; i< relCatHeader.numEntries; i++) /* i = 0 to total relation count */ {
+
+    Attribute relCatRecord[RELCAT_NO_ATTRS]; // will store the record from the relation catalog
+
+    relCatBuffer.getRecord(relCatRecord, i);
+
+    printf("Relation: %s\n", relCatRecord[RELCAT_REL_NAME_INDEX].sVal);
+
+    for (int j=0 ; j< attrCatHeader.numEntries;j++) /* j = 0 to number of entries in the attribute catalog */ {
+
+      // declare attrCatRecord and load the attribute catalog entry into it
+
+      Attribute attrCatRecord[ATTRCAT_NO_ATTRS];
+      attrCatBuffer.getRecord(attrCatRecord, j);
+
+      if (strcmp(attrCatRecord[ATTRCAT_REL_NAME_INDEX].sVal,relCatRecord[RELCAT_REL_NAME_INDEX].sVal)==0)   //sVal is string value of union attribute
+        /* attribute catalog entry corresponds to the current relation */
+        {
+          const char *attrType = attrCatRecord[ATTRCAT_ATTR_TYPE_INDEX].nVal == NUMBER ? "NUM" : "STR";
+          printf("  %s: %s\n", attrCatRecord[ATTRCAT_ATTR_NAME_INDEX].sVal/* get the attribute name */, attrType);
+        } 
+    }
+    printf("\n");
+  }
+
+  printf("\nExercise-1\n");
+  exercise1();
+
+  printf("\nExercise-2\n");
+
+  exercise2();
 
   return 0;
 }
