@@ -56,7 +56,7 @@ OpenRelTable::OpenRelTable()
     {
         //creating a node for each entry in the cache cuz each entry has a linkedlist.
         AttrCacheEntry* entry= (AttrCacheEntry*)malloc(sizeof(AttrCacheEntry));
-        attrCatBlock.getRecord(attrCatRecord,i);  //no need of ATTRCAT_SLOTNUM_FOR_ATTRCAT
+        attrCatBlock.getRecord(&attrCatRecord[0],i);  //no need of ATTRCAT_SLOTNUM_FOR_ATTRCAT
 //we can give &attrCatRecord[0] or just attrCatRecord cuz since its an array it wud auatomatically point to first index but if u give &attrCatRecord its wrong it treats that entire array as one unit which is wrong
        
         AttrCacheTable::recordToAttrCatEntry(attrCatRecord, &entry->attrCatEntry);
@@ -84,7 +84,7 @@ OpenRelTable::OpenRelTable()
     for (int i=6; i<12; i++)
     {
         AttrCacheEntry* entry= (AttrCacheEntry*)malloc(sizeof(AttrCacheEntry));
-        attrCatBlock.getRecord(attrCatRecord,i);
+        attrCatBlock.getRecord(&attrCatRecord[0],i);
 
         AttrCacheTable::recordToAttrCatEntry(attrCatRecord,&entry->attrCatEntry);
         entry->recId.block=ATTRCAT_BLOCK; //recid almost like primary key rec id is combo of slot and block
