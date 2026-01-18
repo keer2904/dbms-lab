@@ -4,173 +4,26 @@
 #include "FrontendInterface/FrontendInterface.h"
 #include <iostream>
 
-//LEARN THE SQL COMMANDS TO CREATE THE FOLLOWING TABLES:
-//CREATE TABLE Students(RollNumber STR, Name STR, Marks NUM, Class STR)
-//Events(id NUM, title STR, location STR)
-//Locations(name STR, capacity NUM) 
-//Participants(regNo NUM, event STR)
-
-// exercise 1:
-// run the main.cpp 
-// when you just print it, it doesnt print the last 3 attributes 
-// have to access the next block to print those. 
-
-
-int exercise1() 
-{
-  Disk disk_run;
-  // create objects for the relation catalog and attribute catalog
-  RecBuffer relCatBuffer(RELCAT_BLOCK);
-  HeadInfo relCatHeader;
-  // load the headers of both the blocks into relCatHeader and attrCatHeader.
-  // (we will implement these functions later)
-  relCatBuffer.getHeader(&relCatHeader);
-  
-  for (int i=0; i< relCatHeader.numEntries; i++) /* i = 0 to total relation count */ 
-  {
-        Attribute relCatRecord[RELCAT_NO_ATTRS]; // will store the record from the relation catalog
-
-        relCatBuffer.getRecord(relCatRecord, i);
-
-        printf("Relation: %s\n", relCatRecord[RELCAT_REL_NAME_INDEX].sVal);
-        int curr = ATTRCAT_BLOCK;
-
-        while (curr!=-1)
-        {
-            RecBuffer CurrAtBuf(curr);
-            HeadInfo attrcathead;
-            CurrAtBuf.getHeader(&attrcathead);
-
-            for (int j=0 ; j< attrcathead.numEntries;j++) /* j = 0 to number of entries in the attribute catalog */ 
-            {
-                  // declare attrCatRecord and load the attribute catalog entry into it
-
-                  Attribute attrCatRecord[ATTRCAT_NO_ATTRS];
-                  CurrAtBuf.getRecord(attrCatRecord, j);
-
-                  if (strcmp(attrCatRecord[ATTRCAT_REL_NAME_INDEX].sVal,relCatRecord[RELCAT_REL_NAME_INDEX].sVal)==0)   //sVal is string value of union attribute
-                    /* attribute catalog entry corresponds to the current relation */
-                    {
-                      const char *attrType = attrCatRecord[ATTRCAT_ATTR_TYPE_INDEX].nVal == NUMBER ? "NUM" : "STR";
-                      printf("  %s: %s\n", attrCatRecord[ATTRCAT_ATTR_NAME_INDEX].sVal/* get the attribute name */, attrType);
-                    } 
-            }
-            curr=attrcathead.rblock;  //move to next block of attribute catalog
-        }
-  }
-  return 0;
-}
-
-//exercise 2:
-//printing the relation again- just show schema
-// need to change class to batch 
-
-
-int exercise2() 
-{
-  Disk disk_run;
-
-  // create objects for the relation catalog and attribute catalog
-  RecBuffer relCatBuffer(RELCAT_BLOCK);
-  RecBuffer attrCatBuffer(ATTRCAT_BLOCK);
-
-  HeadInfo relCatHeader;
-  HeadInfo attrCatHeader;
-
-  // load the headers of both the blocks into relCatHeader and attrCatHeader.
-  // (we will implement these functions later)
-  relCatBuffer.getHeader(&relCatHeader);
-  attrCatBuffer.getHeader(&attrCatHeader);
-
-  for (int k=0 ; k< attrCatHeader.numEntries;k++)
-  {
-
-      Attribute x[RELCAT_NO_ATTRS];
-      attrCatBuffer.getRecord(x,k);
-
-      if (strcmp(x[ATTRCAT_REL_NAME_INDEX].sVal, "Students")==0 && strcmp(x[ATTRCAT_ATTR_NAME_INDEX].sVal, "Class")==0)
-      {
-        strcpy(x[ATTRCAT_ATTR_NAME_INDEX].sVal, "Batch");
-
-        attrCatBuffer.setRecord(x,k);
-      }
-  }
-
-  for (int i=0; i< relCatHeader.numEntries; i++) /* i = 0 to total relation count */ {
-
-    Attribute relCatRecord[RELCAT_NO_ATTRS]; // will store the record from the relation catalog
-
-    relCatBuffer.getRecord(relCatRecord, i);
-
-    printf("Relation: %s\n", relCatRecord[RELCAT_REL_NAME_INDEX].sVal);
-
-    for (int j=0 ; j< attrCatHeader.numEntries;j++) /* j = 0 to number of entries in the attribute catalog */ {
-
-      // declare attrCatRecord and load the attribute catalog entry into it
-
-      Attribute attrCatRecord[ATTRCAT_NO_ATTRS];
-      attrCatBuffer.getRecord(attrCatRecord, j);
-
-      if (strcmp(attrCatRecord[ATTRCAT_REL_NAME_INDEX].sVal,relCatRecord[RELCAT_REL_NAME_INDEX].sVal)==0)   //sVal is string value of union attribute
-        /* attribute catalog entry corresponds to the current relation */
-        {
-          const char *attrType = attrCatRecord[ATTRCAT_ATTR_TYPE_INDEX].nVal == NUMBER ? "NUM" : "STR";
-          printf("  %s: %s\n", attrCatRecord[ATTRCAT_ATTR_NAME_INDEX].sVal/* get the attribute name */, attrType);
-        } 
-    }
-    printf("\n");
-  }
-
-  return 0;
-}
-
-
 int main(int argc, char *argv[]) {
   Disk disk_run;
+  StaticBuffer buffer;
+  OpenRelTable cache;
+  for (int relId=0;relId<2;relId++)
+  {
+      RelCatEntry* relCatBuf;
+      RelCacheTable::getRelCatEntry(relId, relCatBuf);
+      printf("Relation name: %s\n", relCatBuf->relName);
 
-  // create objects for the relation catalog and attribute catalog
-  RecBuffer relCatBuffer(RELCAT_BLOCK);
-  RecBuffer attrCatBuffer(ATTRCAT_BLOCK);
+      for (int j=0; j<relCatBuf->numAttrs; j++)
+      {
+          AttrCatEntry* attrCatBuf;
+          AttrCacheTable::getAttrCatEntry(relId,j,attrCatBuf);
 
-  HeadInfo relCatHeader;
-  HeadInfo attrCatHeader;
+          const char *attrType=attrCatBuf->attrType==NUMBER ?"NUM":"STR"; //imp dont forget this
 
-  // load the headers of both the blocks into relCatHeader and attrCatHeader.
-  // (we will implement these functions later)
-  relCatBuffer.getHeader(&relCatHeader);
-  attrCatBuffer.getHeader(&attrCatHeader);
-
-  for (int i=0; i< relCatHeader.numEntries; i++) /* i = 0 to total relation count */ {
-
-    Attribute relCatRecord[RELCAT_NO_ATTRS]; // will store the record from the relation catalog
-
-    relCatBuffer.getRecord(relCatRecord, i);
-
-    printf("Relation: %s\n", relCatRecord[RELCAT_REL_NAME_INDEX].sVal);
-
-    for (int j=0 ; j< attrCatHeader.numEntries;j++) /* j = 0 to number of entries in the attribute catalog */ {
-
-      // declare attrCatRecord and load the attribute catalog entry into it
-
-      Attribute attrCatRecord[ATTRCAT_NO_ATTRS];
-      attrCatBuffer.getRecord(attrCatRecord, j);
-
-      if (strcmp(attrCatRecord[ATTRCAT_REL_NAME_INDEX].sVal,relCatRecord[RELCAT_REL_NAME_INDEX].sVal)==0)   //sVal is string value of union attribute
-        /* attribute catalog entry corresponds to the current relation */
-        {
-          const char *attrType = attrCatRecord[ATTRCAT_ATTR_TYPE_INDEX].nVal == NUMBER ? "NUM" : "STR";
-          printf("  %s: %s\n", attrCatRecord[ATTRCAT_ATTR_NAME_INDEX].sVal/* get the attribute name */, attrType);
-        } 
-    }
-    printf("\n");
+          printf(" %s: %s\n", attrCatBuf->attrName, attrType);
+      }
   }
-
-  printf("\nExercise-1\n");
-  exercise1();
-
-  printf("\nExercise-2\n");
-
-  exercise2();
 
   return 0;
 }

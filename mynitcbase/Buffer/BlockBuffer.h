@@ -2,7 +2,6 @@
 #define NITCBASE_BLOCKBUFFER_H
 
 #include <cstdint>
-
 #include "../Disk_Class/Disk.h"
 #include "../define/constants.h"
 #include "StaticBuffer.h"

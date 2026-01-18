@@ -18,7 +18,7 @@ typedef struct RelCatEntry {
 typedef struct RelCacheEntry {
   RelCatEntry relCatEntry;
   bool dirty;
-  RecId recId;
+  RecId recId; //block and slot check RecId declaration
   RecId searchIndex;
 
 } RelCacheEntry;
