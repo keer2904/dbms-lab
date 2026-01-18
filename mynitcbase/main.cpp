@@ -8,7 +8,7 @@ int main(int argc, char *argv[]) {
   Disk disk_run;
   StaticBuffer buffer;
   OpenRelTable cache;
-  for (int relId=0;relId<2;relId++)
+  for (int relId=0;relId<3;relId++)
   {
       RelCatEntry relCatBuf;  //dont do * here just bcoz u need pointer to that function. if u do that it is actually declaration not intialization so what happens is
       // it goes to garbage address and when u try to make changes or write to tht entry it gives u segmentation fault 

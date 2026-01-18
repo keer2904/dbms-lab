@@ -41,7 +41,7 @@ OpenRelTable::OpenRelTable()
     //block 4 slot 1 for attribute catalog data in relation catalog 
     //block 4 slot 0 for relation catalog data in relation catalog
 
-    RelCacheTable::relCache[ATTRCAT_RELID]=(struct RelCacheEntry*)malloc(sizeof(RelCacheEntry));
+    RelCacheTable::relCache[ATTRCAT_RELID]=(struct RelCacheEntry*)malloc(sizeof(RelCacheEntry)); //why do u need struct??
     *(RelCacheTable::relCache[ATTRCAT_RELID])=relCacheEntry;
 
     /******************* 2) ATTRIBUTE CACHE TABLE *********************/
@@ -55,7 +55,7 @@ OpenRelTable::OpenRelTable()
     for (int i=0; i< 6; i++)
     {
         //creating a node for each entry in the cache cuz each entry has a linkedlist.
-        AttrCacheEntry* entry= (AttrCacheEntry*)malloc(sizeof(AttrCacheEntry));
+        AttrCacheEntry* entry= (AttrCacheEntry*)malloc(sizeof(AttrCacheEntry)); //why no struct??
         attrCatBlock.getRecord(&attrCatRecord[0],i);  //no need of ATTRCAT_SLOTNUM_FOR_ATTRCAT
 //we can give &attrCatRecord[0] or just attrCatRecord cuz since its an array it wud auatomatically point to first index but if u give &attrCatRecord its wrong it treats that entire array as one unit which is wrong
        
@@ -104,6 +104,49 @@ OpenRelTable::OpenRelTable()
         }
     }
     AttrCacheTable::attrCache[ATTRCAT_RELID]=attrhead;
+
+
+
+    //exercise 
+    //student relation 
+
+    relCatBlock.getRecord(relCatRecord,2);
+    RelCacheTable::recordToRelCatEntry(relCatRecord,&relCacheEntry.relCatEntry);
+    relCacheEntry.recId.block=RELCAT_BLOCK;
+    relCacheEntry.recId.slot=2;
+
+    RelCacheTable::relCache[ATTRCAT_RELID+1]=(struct RelCacheEntry* )(malloc(sizeof(RelCacheEntry)));
+    *(RelCacheTable::relCache[ATTRCAT_RELID+1])=relCacheEntry; //ATTRCAT_RELID=1 the next entry shud be at 2 
+
+    //student attribute
+    
+    attrhead=nullptr;
+    curr=nullptr;
+
+    int studentnumattr=relCacheEntry.relCatEntry.numAttrs;
+
+    for(int i=12;i<12+studentnumattr;i++)
+    {
+        AttrCacheEntry* entry= (AttrCacheEntry*)(malloc(sizeof(AttrCacheEntry))); 
+        attrCatBlock.getRecord(attrCatRecord,i); //buffer to cat record (seperate data structure)
+        AttrCacheTable::recordToAttrCatEntry(attrCatRecord,&entry->attrCatEntry) ;//cat record is going inside cat entry
+        entry->recId.block=ATTRCAT_BLOCK; //assuming only 1 block has all the attribute values
+        entry->recId.slot=i;
+
+        entry->next=nullptr; //its entry->next=null not curr->next=null
+
+        if(attrhead==nullptr)
+        {
+            attrhead=entry;
+            curr=attrhead; //its not curr=entry 
+        } 
+        else
+        {
+            curr->next=entry;
+            curr=curr->next;
+        }
+    }
+    AttrCacheTable::attrCache[ATTRCAT_RELID+1]=attrhead;
 }
 
 OpenRelTable::~OpenRelTable()
