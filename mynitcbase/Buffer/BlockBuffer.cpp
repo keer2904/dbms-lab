@@ -4,6 +4,33 @@
 
 // the declarations for these functions can be found in "BlockBuffer.h"
 
+int compareAttrs(union Attribute attr1, union Attribute attr2, int attrType)
+{
+    double diff;
+    if (attrType==STRING)
+    {
+        diff=strcmp(attr1.sVal,attr2.sVal);
+    }
+    else
+    {
+        diff=attr1.nVal-attr2.nVal;
+    }
+
+    if (diff>0)
+    {
+        return 1;
+    }
+
+    if (diff<0)
+    {
+        return -1;
+    }
+    if (diff==0)
+    {
+        return 0;
+    }
+    return SUCCESS;
+}
 BlockBuffer::BlockBuffer(int blockNum) 
 {
   // initialise this.blockNum with the argument
@@ -106,5 +133,25 @@ int BlockBuffer::loadBlockAndGetBufferPtr( unsigned char ** bufferPtr)
       }
 
       *bufferPtr=StaticBuffer::blocks[bufferNum]; //its not blocks[blockNum] its block[bufferNum] we defined a pointer cuz its easy to put that as a paraemeter when other functions call this function its better than actually doing blocks[blockNum].
+      return SUCCESS;
+}
+int RecBuffer::getSlotMap(unsigned char *slotMap)
+{
+      unsigned char *bufferPtr;
+
+      int ret=loadBlockAndGetBufferPtr(&bufferPtr);  //gives integer value and gets the starting address of the buffer containing the block.
+
+      if(ret !=SUCCESS)
+      {
+            return ret;
+      }
+      struct HeadInfo head;
+      this -> getHeader(&head);
+      int slotCount=head.numSlots;
+
+      unsigned char *slotMapInBuffer=bufferPtr+HEADER_SIZE;
+      memcpy(slotMap, slotMapInBuffer, slotCount);  // i didnt put this line so what happ was it was printing the entire slotmap with all 0's as well 
+      //Without copying the slotMap data, the slotMap array in BlockAccess::linearSearch() remains uninitialized so it will read all the data including 0's
+
       return SUCCESS;
 }
