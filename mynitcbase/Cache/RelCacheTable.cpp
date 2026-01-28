@@ -3,7 +3,7 @@
 
 RelCacheEntry* RelCacheTable::relCache[MAX_OPEN]; // relCache is a static variable which has the type relcacheentry in the relcachetable class
 
-int RelCacheTable::getRelCatEntry(int relId, RelCatEntry* relCatBuf)
+int RelCacheTable::getRelCatEntry(int relId, RelCatEntry* relCatBuf) //The caller should allocate memory for the struct RelCatEntry before calling the function.
 {
     if (relId<0 ||relId>=MAX_OPEN) //relId is from 0 to 11
     {
@@ -17,6 +17,8 @@ int RelCacheTable::getRelCatEntry(int relId, RelCatEntry* relCatBuf)
     *relCatBuf=relCache[relId]->relCatEntry; //make a buffer pointer to point to the cache entry
     return SUCCESS;
 }
+
+//The caller should allocate memory for the struct RelCatEntry and array of union Attribute before calling the function.
 
 void RelCacheTable::recordToRelCatEntry(union Attribute record[RELCAT_NO_ATTRS], RelCatEntry* relCatEntry)
 {

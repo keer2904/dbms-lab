@@ -3,7 +3,9 @@
 #include <cstdlib>
 #include <stdlib.h>
 
-OpenRelTable::OpenRelTable()
+//OpenRelTable constructor initializes the tableMetaInfo field and populates the Relation Cache Table and Attribute Cache Table with entries of both Relation Catalog relation and Attribute Catalog relation. 
+
+OpenRelTable::OpenRelTable()  //to read records from the disk into the cache.
 {
     for(int i=0; i<MAX_OPEN; ++i)
     {
@@ -22,7 +24,7 @@ OpenRelTable::OpenRelTable()
     relCacheEntry.recId.block=RELCAT_BLOCK;  //recId structure has block and slot number 
     relCacheEntry.recId.slot=RELCAT_SLOTNUM_FOR_RELCAT;
 
-    RelCacheTable::relCache[RELCAT_RELID]=(struct RelCacheEntry*)malloc(sizeof(RelCacheEntry));  //allocate space for relcachetable
+    RelCacheTable::relCache[RELCAT_RELID]=(RelCacheEntry*)malloc(sizeof(RelCacheEntry));  //allocate space for relcachetable
     *(RelCacheTable::relCache[RELCAT_RELID])=relCacheEntry;  //first entry=index=0 put the cache record into it
 
     //do samething for attribute
@@ -41,7 +43,7 @@ OpenRelTable::OpenRelTable()
     //block 4 slot 1 for attribute catalog data in relation catalog 
     //block 4 slot 0 for relation catalog data in relation catalog
 
-    RelCacheTable::relCache[ATTRCAT_RELID]=(struct RelCacheEntry*)malloc(sizeof(RelCacheEntry)); //why do u need struct??
+    RelCacheTable::relCache[ATTRCAT_RELID]=(RelCacheEntry*)malloc(sizeof(RelCacheEntry));
     *(RelCacheTable::relCache[ATTRCAT_RELID])=relCacheEntry;
 
     /******************* 2) ATTRIBUTE CACHE TABLE *********************/
@@ -55,12 +57,13 @@ OpenRelTable::OpenRelTable()
     for (int i=0; i< 6; i++)
     {
         //creating a node for each entry in the cache cuz each entry has a linkedlist.
-        AttrCacheEntry* entry= (AttrCacheEntry*)malloc(sizeof(AttrCacheEntry)); //why no struct??
+        AttrCacheEntry* entry= (AttrCacheEntry*)malloc(sizeof(AttrCacheEntry));
         attrCatBlock.getRecord(&attrCatRecord[0],i);  //no need of ATTRCAT_SLOTNUM_FOR_ATTRCAT
-//we can give &attrCatRecord[0] or just attrCatRecord cuz since its an array it wud auatomatically point to first index but if u give &attrCatRecord its wrong it treats that entire array as one unit which is wrong
+        //we can give &attrCatRecord[0] or just attrCatRecord cuz since its an array it wud auatomatically point to first index 
+        //but if u give &attrCatRecord its wrong it treats that entire array as one unit which is wrong
        
         AttrCacheTable::recordToAttrCatEntry(attrCatRecord, &entry->attrCatEntry);
-        entry->recId.block=ATTRCAT_BLOCK; //its arrow not .
+        entry->recId.block=ATTRCAT_BLOCK; //its arrow not . bcoz entry is a pointer not normal obj if it defined as AttrCacheEntry x then u can use x.recId
         entry->recId.slot=i; //its slot not slotnum
         entry->next=nullptr;
 
@@ -148,6 +151,8 @@ OpenRelTable::OpenRelTable()
     }
     AttrCacheTable::attrCache[ATTRCAT_RELID+1]=attrhead;
 }
+
+//The OpenRelTable destructor closes any open relation remaining, including the Relation Catalog and Attribute Catalog relations, when the system is shut down
 
 OpenRelTable::~OpenRelTable()
 {
