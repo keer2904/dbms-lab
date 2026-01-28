@@ -2,7 +2,7 @@
 
 #include <cstring>
 
-RecId BlockAccess::linearSearch(int relId, char attrName[ATTR_SIZE],union Attribute attrVal, int op) //why RecId
+RecId BlockAccess::linearSearch(int relId, char attrName[ATTR_SIZE],union Attribute attrVal, int op) //linearly searches the value of attribute against the value in the record.
 {
     RecId prevRecId; //no need of * here
     RelCacheTable::getSearchIndex(relId, &prevRecId); 
@@ -53,9 +53,7 @@ RecId BlockAccess::linearSearch(int relId, char attrName[ATTR_SIZE],union Attrib
 
         AttrCacheTable::getAttrCatEntry(relId, attrName,&attrCatBuf);
 
-        Attribute attrOffset= rec[attrCatBuf.offset];
-        int cmpVal = compareAttrs(attrOffset, attrVal, attrCatBuf.attrType); //why and what are we comparing??
-
+        int cmpVal = compareAttrs(rec[attrCatBuf.offset], attrVal, attrCatBuf.attrType); 
         if (
             (op == NE && cmpVal != 0) ||    // if op is "not equal to"
             (op == LT && cmpVal < 0) ||     // if op is "less than"

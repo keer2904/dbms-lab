@@ -61,9 +61,11 @@ int Frontend::select_attrlist_from_table(char relname_source[ATTR_SIZE], char re
   return SUCCESS;
 }
 
+
+// *************CHANGED HERE **************
 int Frontend::select_from_table_where(char relname_source[ATTR_SIZE], char relname_target[ATTR_SIZE],
                                       char attribute[ATTR_SIZE], int op, char value[ATTR_SIZE]) {
-  // Algebra::select
+
   return Algebra::select(relname_source,relname_target,attribute,op,value);
 }
 

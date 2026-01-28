@@ -38,7 +38,7 @@ int RelCacheTable::getSearchIndex(int relId, RecId* searchIndex)
     {
         return E_RELNOTOPEN;
     }
-    *searchIndex=relCache[relId]->searchIndex; //why is there pointer
+    *searchIndex=relCache[relId]->searchIndex; 
     return SUCCESS;
 }
 

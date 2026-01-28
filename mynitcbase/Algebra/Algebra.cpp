@@ -67,15 +67,15 @@ int Algebra::select(char srcRel[ATTR_SIZE], char targetRel[ATTR_SIZE], char attr
         console. Direct console output is not permitted by the actual the NITCbase
         specification and the output can only be inserted into a new relation. We will
         be modifying it in the later stages to match the specification.
-        ***********************WDYMMM*/
+        ************************/
     // Printing the attribute column names first
     
     printf("|");
-    for (int i=0; i<relCatbufEntry.numAttrs; ++i) //why is nit ++i not i++
+    for (int i=0; i<relCatbufEntry.numAttrs; ++i) //why is not ++i not i++ cuz last node is null ptr
     {
         AttrCatEntry attrCatEntry;
 
-        AttrCacheTable::getAttrCatEntry(srcRelId, i, &attrCatEntry);
+        AttrCacheTable::getAttrCatEntry(srcRelId, i, &attrCatEntry); //each attribute will be a linked list
 
         printf(" %s |", attrCatEntry.attrName);
     }
