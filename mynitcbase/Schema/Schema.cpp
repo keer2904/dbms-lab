@@ -22,7 +22,7 @@ int Schema::closeRel(char relName[ATTR_SIZE])
 
     int relId=OpenRelTable::getRelId(relName);
 
-    if(relId == E_RELNOTOPEN) //E_RELNOTOPEN=-89
+    if(relId == E_RELNOTOPEN) 
     {
         return E_RELNOTOPEN;
     }

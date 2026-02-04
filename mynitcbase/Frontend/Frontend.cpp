@@ -14,6 +14,7 @@ int Frontend::drop_table(char relname[ATTR_SIZE]) {
   return SUCCESS;
 }
 
+
 int Frontend::open_table(char relname[ATTR_SIZE]) {
   // Schema::openRel
   return Schema::openRel(relname);

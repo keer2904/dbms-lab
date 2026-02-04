@@ -10,7 +10,7 @@ AttrCacheEntry* createList(int length)
     AttrCacheEntry* head=(AttrCacheEntry*)malloc(sizeof(AttrCacheEntry));
     AttrCacheEntry* curr=head;
 
-    for (int i=1;i<length;i++) //why is it i=1 not 0
+    for (int i=1;i<length;i++) 
     {
         curr->next=(AttrCacheEntry*)malloc(sizeof(AttrCacheEntry));
         curr=curr->next;
@@ -21,7 +21,7 @@ AttrCacheEntry* createList(int length)
 
 OpenRelTable::OpenRelTable()
 {
-    for(int i=0; i<MAX_OPEN; ++i)  //why is it ++i not i++
+    for(int i=0; i<MAX_OPEN; ++i)  // initialise all values in relCache and attrCache to be nullptr and all entries in tableMetaInfo to be free
     {
         RelCacheTable::relCache[i]=nullptr;
         AttrCacheTable::attrCache[i]=nullptr;
@@ -29,6 +29,7 @@ OpenRelTable::OpenRelTable()
     }
 
     /************** 1) RELATION CACHE TABLE ***************/
+    //load the relation and attribute catalog into the relation cache
 
     RecBuffer relCatBlock(RELCAT_BLOCK);  //disk to buffer allocation
     Attribute relCatRecord[RELCAT_NO_ATTRS]; //a seperate data structure to get the record from buffer
@@ -62,6 +63,7 @@ OpenRelTable::OpenRelTable()
     *(RelCacheTable::relCache[ATTRCAT_RELID])=relCacheEntry;
 
     /******************* 2) ATTRIBUTE CACHE TABLE *********************/
+    //load the relation and attribute catalog into the attribute cache
 
     RecBuffer attrCatBlock(ATTRCAT_BLOCK); //disk to buffer
     Attribute attrCatRecord[ATTRCAT_NO_ATTRS]; //seperate data structure
@@ -94,7 +96,6 @@ OpenRelTable::OpenRelTable()
     }
     AttrCacheTable::attrCache[RELCAT_RELID]=attrhead; //add the header pointer to attr cache table 
 
-
     attrhead=nullptr;
     curr=nullptr;
 
@@ -122,6 +123,9 @@ OpenRelTable::OpenRelTable()
     }
     AttrCacheTable::attrCache[ATTRCAT_RELID]=attrhead;
 
+
+    //STAGE-5
+    //tableMetaInfo has 2 fields
     tableMetaInfo[RELCAT_RELID].free=false;
     tableMetaInfo[ATTRCAT_RELID].free=false;
 
@@ -183,10 +187,10 @@ int OpenRelTable::getFreeOpenRelTableEntry()
 
 int OpenRelTable::openRel(char relName[ATTR_SIZE])
 {
-    int ret=OpenRelTable::getRelId(relName);
-    if(ret>=0 && ret<MAX_OPEN) //better than doing ret!=e_relnotopen
+    int ret=OpenRelTable::getRelId(relName); //just to check if relation is already opened 
+    if(ret>=0 && ret<MAX_OPEN) 
     {
-        return ret;
+        return ret; //could be E_RELOPEN right?
     }
 
     int freeSlot=OpenRelTable::getFreeOpenRelTableEntry();
@@ -295,7 +299,8 @@ int OpenRelTable::closeRel(int relId)
         entry=nextEntry; //dont do entry->next;
     }
 
-    OpenRelTable::tableMetaInfo[relId].free=true;
+    OpenRelTable::tableMetaInfo[relId].free=true;  
+    //Do you need to "free" the relName field?  No, the next openRel() call will simply overwrite the old relName with strcpy()
     RelCacheTable::relCache[relId]=nullptr;
     AttrCacheTable::attrCache[relId]=nullptr;
     
