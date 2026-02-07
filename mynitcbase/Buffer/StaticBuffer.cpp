@@ -1,5 +1,6 @@
 #include "StaticBuffer.h"
 
+//stage-3
 // Both these arrays are static members of the class and hence need to be explicitly declared before they can be used.
 unsigned char StaticBuffer::blocks[BUFFER_CAPACITY][BLOCK_SIZE];
 struct BufferMetaInfo StaticBuffer::metainfo[BUFFER_CAPACITY];
@@ -8,21 +9,27 @@ StaticBuffer::StaticBuffer()
 {
     for (int i=0; i<BUFFER_CAPACITY;i++)
     {
-        metainfo[i].free=true; //check metainfor structure it has bool free
+        metainfo[i].free=true;
+        metainfo[i].blockNum=-1;
+        metainfo[i].dirty=false;
+        metainfo[i].timeStamp=-1;
     }
 }
 
+//stage-6
+// Writing back all modified blocks on system exit
 StaticBuffer::~StaticBuffer()
 {
-
-/*
-At this stage, we are not writing back from the buffer to the disk since we are
-not modifying the buffer. So, we will define an empty destructor for now. In
-subsequent stages, we will implement the write-back functionality here.
-*/
-
+    for (int i=0; i<BUFFER_CAPACITY;i++)
+    {
+        if (metainfo[i].free==false && metainfo[i].dirty==true)
+        {
+            Disk::writeBlock(StaticBuffer::blocks[i], metainfo[i].blockNum);
+        }
+    }
 }
 
+//stage-3
 int StaticBuffer::getFreeBuffer(int blockNum)
 {
     if (blockNum < 0 || blockNum > DISK_BLOCKS)
@@ -41,12 +48,41 @@ int StaticBuffer::getFreeBuffer(int blockNum)
         }
     }
 
+    if (allocatedBuffer==BUFFER_CAPACITY)
+    {
+        int maxx=-1;
+        for (int i=0;i<BUFFER_CAPACITY;i++)
+        {
+            if (metainfo[i].timeStamp>maxx)
+            {
+                maxx=metainfo[i].timeStamp;
+            }
+        }
+
+        if (metainfo[maxx].dirty==true)
+        {
+            Disk::writeBlock(StaticBuffer::blocks[maxx], metainfo[maxx].blockNum);
+        }
+        allocatedBuffer=maxx;
+    }
+
     metainfo[allocatedBuffer].free=false;
+    metainfo[allocatedBuffer].dirty=true;
+    metainfo[allocatedBuffer].timeStamp=0; //BUT WHY
     metainfo[allocatedBuffer].blockNum=blockNum;
 
     return allocatedBuffer;
 }
 
+//stage-6 adds the below to getFreeBuffer()
+ // if a free buffer is not available,
+//     find the buffer with the largest timestamp
+//     IF IT IS DIRTY, write back to the disk using Disk::writeBlock()
+//     set bufferNum = index of this buffer
+// update the metaInfo entry corresponding to bufferNum with
+// free:false, dirty:false, blockNum:the input block number, timeStamp:0.
+
+//stage-3
 int StaticBuffer::getBufferNum(int block_num)
 {
     if (block_num < 0 || block_num > DISK_BLOCKS)
@@ -62,4 +98,23 @@ int StaticBuffer::getBufferNum(int block_num)
         }
     }
     return E_BLOCKNOTINBUFFER;
+}
+
+//stage-6
+
+int StaticBuffer::setDirtyBit(int blockNum)
+{
+    int ret=StaticBuffer::getBufferNum(blockNum);
+    if (ret ==E_BLOCKNOTINBUFFER)
+    {
+        return E_BLOCKNOTINBUFFER;
+    }
+
+    if(ret==E_OUTOFBOUND)
+    {
+        return E_OUTOFBOUND;
+    }
+
+    metainfo[ret].dirty=true;
+    return SUCCESS;
 }
