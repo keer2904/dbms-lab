@@ -21,7 +21,7 @@ AttrCacheEntry* createList(int length)
 
 OpenRelTable::OpenRelTable()
 {
-    for(int i=0; i<MAX_OPEN; ++i)  // initialise all values in relCache and attrCache to be nullptr and all entries in tableMetaInfo to be free
+    for(int i=0; i<MAX_OPEN; ++i) // why is it ++i initialise all values in relCache and attrCache to be nullptr and all entries in tableMetaInfo to be free
     {
         RelCacheTable::relCache[i]=nullptr;
         AttrCacheTable::attrCache[i]=nullptr;
@@ -129,8 +129,8 @@ OpenRelTable::OpenRelTable()
     tableMetaInfo[RELCAT_RELID].free=false;
     tableMetaInfo[ATTRCAT_RELID].free=false;
 
-    strcpy(tableMetaInfo[RELCAT_RELID].relName,"RELCAT_RELNAME");
-    strcpy(tableMetaInfo[ATTRCAT_RELID].relName,"ATTRCAT_RELNAME");
+    strcpy(tableMetaInfo[RELCAT_RELID].relName,RELCAT_RELNAME);
+    strcpy(tableMetaInfo[ATTRCAT_RELID].relName,ATTRCAT_RELNAME);
 
 }
 
@@ -188,7 +188,7 @@ int OpenRelTable::getFreeOpenRelTableEntry()
 int OpenRelTable::openRel(char relName[ATTR_SIZE])
 {
     int ret=OpenRelTable::getRelId(relName); //just to check if relation is already opened 
-    if(ret>=0 && ret<MAX_OPEN) 
+    if(ret>=0 && ret<MAX_OPEN)
     {
         return ret; //could be E_RELOPEN right?
     }
@@ -275,13 +275,15 @@ int OpenRelTable::openRel(char relName[ATTR_SIZE])
     return relId;
 }
 
+
+//stage-5, stage-7 
 int OpenRelTable::closeRel(int relId)
 {
     if(relId==RELCAT_RELID || relId==ATTRCAT_RELID)
     {
         return E_NOTPERMITTED;
     }
-    if(relId<0 || relId>MAX_OPEN)
+    if(relId<0 || relId>=MAX_OPEN)
     {
         return E_OUTOFBOUND;
     }
@@ -290,8 +292,26 @@ int OpenRelTable::closeRel(int relId)
         return E_RELNOTOPEN;
     }
 
-    free(RelCacheTable::relCache[relId]);
+    /****** Releasing the Relation Cache entry of the relation ******/
 
+    if (RelCacheTable::relCache[relId]->dirty==true)
+    {
+        RelCatEntry relCatEntry= RelCacheTable::relCache[relId]->relCatEntry;
+        Attribute record[RELCAT_NO_ATTRS] ;//here u dont need to do getRecord bcoz u need to add smtg into record
+        RelCacheTable::relCatEntryToRecord(&relCatEntry,record); //relCatEntry is not array so u need to put &
+
+        RecId recId= RelCacheTable::relCache[relId]->recId;
+        RecBuffer relCatBlock(recId.block);
+
+        relCatBlock.setRecord(record, recId.slot);
+    }
+
+    /****** Releasing the Attribute Cache entry of the relation ******/
+
+
+    //stage-5
+
+    free(RelCacheTable::relCache[relId]);  //IS THIS REQUIRED??
     for(AttrCacheEntry* entry=AttrCacheTable::attrCache[relId]; entry !=nullptr ; )
     {
         AttrCacheEntry* nextEntry=entry->next;

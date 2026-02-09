@@ -31,13 +31,50 @@ int compareAttrs(union Attribute attr1, union Attribute attr2, int attrType)
     }
     return SUCCESS;
 }
+
+//constructor 1
+BlockBuffer::BlockBuffer(char blockType)
+{
+      //since getFreeBlk() requires int as its input parameter we have to convert char to int
+      int blockTypeInt;
+      if (blockType == 'R')
+      {
+            blockTypeInt= REC;
+      }
+      else if(blockType == 'I')
+      {
+            blockTypeInt= IND_INTERNAL;
+      }
+      else if(blockType == 'L')
+      {
+            blockTypeInt=IND_LEAF;
+      }
+      else
+      {
+            blockTypeInt=UNUSED_BLK;
+      }
+
+      int blockNum=BlockBuffer::getFreeBlock(blockTypeInt);
+      this->blockNum=blockNum;
+
+      if (blockNum<0 || blockNum>=DISK_BLOCKS)
+      {
+            return;
+      }
+}
+
+//constructor 2
 BlockBuffer::BlockBuffer(int blockNum) 
 {
   // initialise this.blockNum with the argument
   this -> blockNum = blockNum;
 }
 
-// calls the parent class constructor
+//constructor 1 of RecBuffer
+
+RecBuffer::RecBuffer() : BlockBuffer ('R')
+{}
+// constructor 2 of RecBuffer
 RecBuffer::RecBuffer(int blockNum) : BlockBuffer::BlockBuffer(blockNum) 
 {}
 
@@ -57,6 +94,37 @@ int BlockBuffer::getHeader(struct HeadInfo *head) {
       memcpy(&head->rblock, bufferPtr + 12, 4);
       memcpy(&head->lblock, bufferPtr + 8, 4);
 
+      return SUCCESS;
+}
+
+//stage-7
+int BlockBuffer::setHeader(struct HeadInfo *head)
+{
+      unsigned char *bufferPtr;
+      int ret=BlockBuffer::loadBlockAndGetBufferPtr(&bufferPtr);
+      if (ret!=SUCCESS)
+      {
+            return ret;
+      }
+
+      // cast bufferPtr to type HeadInfo* but WHY?
+      struct HeadInfo *bufferHeader =(struct HeadInfo *) bufferPtr;
+
+      //why dont we need memcpy here??
+
+      bufferHeader->blockType=head->blockType;
+      bufferHeader->lblock=head->lblock;
+      bufferHeader->numAttrs=head->numAttrs;
+      bufferHeader->numEntries=head->numEntries;
+      bufferHeader->numSlots=head->numSlots;
+      bufferHeader->pblock=head->pblock;
+      bufferHeader->rblock=head->rblock;
+
+      int x=StaticBuffer::setDirtyBit(this->blockNum);
+      if (x!=SUCCESS)
+      {
+            return x;
+      }
       return SUCCESS;
 }
 
@@ -108,6 +176,36 @@ int RecBuffer::getSlotMap(unsigned char *slotMap)
       unsigned char *slotMapInBuffer=bufferPtr+HEADER_SIZE;
       memcpy(slotMap, slotMapInBuffer, slotCount);  // i didnt put this line so what happ was it was printing the entire slotmap with all 0's as well 
       //Without copying the slotMap data, the slotMap array in BlockAccess::linearSearch() remains uninitialized so it will read all the data including 0's
+
+      return SUCCESS;
+}
+
+int RecBuffer::setSlotMap(unsigned char * slotMap)
+{
+      unsigned char *bufferPtr;
+      int ret=loadBlockAndGetBufferPtr(&bufferPtr);
+
+      if (ret!=SUCCESS)
+      {
+            return ret;
+      }
+      struct HeadInfo head;
+
+      this->getHeader(&head);  // this is a pointer hence arrow. get the header of the block using the getHeader() function
+
+      int numSlots = head.numSlots;
+
+      memcpy(bufferPtr+HEADER_SIZE, slotMap,numSlots);
+
+    // the slotmap starts at bufferPtr + HEADER_SIZE. Copy the contents of the
+    // argument `slotMap` to the buffer replacing the existing slotmap.
+    // Note that size of slotmap is `numSlots`
+
+      ret=StaticBuffer::setDirtyBit(this->blockNum);
+      if (ret!=SUCCESS)
+      {
+            return ret;
+      }
 
       return SUCCESS;
 }
@@ -195,4 +293,82 @@ int BlockBuffer::loadBlockAndGetBufferPtr( unsigned char ** bufferPtr)
 
       *bufferPtr=StaticBuffer::blocks[bufferNum]; //its not blocks[blockNum] its block[bufferNum] we defined a pointer cuz its easy to put that as a paraemeter when other functions call this function its better than actually doing blocks[blockNum].
       return SUCCESS;
+}
+
+
+int BlockBuffer::setBlockType(int blockType)
+{
+      unsigned char *bufferPtr;
+      int ret = BlockBuffer::loadBlockAndGetBufferPtr(&bufferPtr);
+
+      if (ret !=SUCCESS)
+      {
+            return ret;
+      }
+
+      ////store the input block type in the first 4 bytes of the buffer.
+      *((int32_t *)bufferPtr)=blockType; //learn this syntax WHY SHUD WE TYPECAST
+
+      //update the StaticBuffer::blockAllocMap entry corresponding to the object's block number to `blockType`.
+      StaticBuffer::blockAllocMap[this->blockNum]=blockType; 
+      //find out the strucctue of this why are we storing block type into block num  
+
+      int x=StaticBuffer::setDirtyBit(this->blockNum);
+      if (x!=SUCCESS)
+      {
+            return x;
+      }
+      return SUCCESS;
+}
+
+int BlockBuffer::getFreeBlock(int blockType)
+{
+      int block=-1;
+      for (int i=0; i<DISK_BLOCKS;i++)
+      {
+            if(StaticBuffer::blockAllocMap[i]==UNUSED_BLK)  //find the block number of a free block in the disk. 
+            //if it was buffer we could have called the getfreebuffer func but for this we cant
+            {
+                  block=i;
+                  break;
+            }
+      }
+      if (block==-1)
+      {
+            return E_DISKFULL;
+      }
+
+      this->blockNum=block; //please understand the difference between both lhs and rhs
+
+      int ret=StaticBuffer::getFreeBuffer(block);
+
+      struct HeadInfo head;
+
+      head.pblock=-1; //no need of arrows or & here unlike in setHeader??
+      head.rblock=-1;
+      head.lblock=-1;
+      head.numAttrs=0;
+      head.numEntries=0;
+      head.numSlots=0;
+
+      int x=BlockBuffer::setHeader(&head);
+      if (x !=SUCCESS)
+      {
+            return x;
+      }
+
+      int y=BlockBuffer::setBlockType(blockType);
+      if (y !=SUCCESS)
+      {
+            return y;
+      }
+      
+      return block;
+}
+
+//stage-7
+int BlockBuffer::getBlockNum()
+{
+
+    return this->blockNum;
 }

@@ -1,12 +1,23 @@
 #include "StaticBuffer.h"
+#include <cstring> //need to include this to make sure memcpy works
 
-//stage-3
+//stage-3, stage-6, stage-7
 // Both these arrays are static members of the class and hence need to be explicitly declared before they can be used.
 unsigned char StaticBuffer::blocks[BUFFER_CAPACITY][BLOCK_SIZE];
 struct BufferMetaInfo StaticBuffer::metainfo[BUFFER_CAPACITY];
 
+unsigned char StaticBuffer::blockAllocMap[DISK_BLOCKS];
+
 StaticBuffer::StaticBuffer()
 {
+    unsigned char buffer[BLOCK_SIZE];
+    for (int i=0; i<4; i++)  //i is basically bmap value 
+    {
+        //here its read and then copy contents
+        Disk::readBlock(buffer, i);
+        memcpy(blockAllocMap+(i*BLOCK_SIZE), buffer, BLOCK_SIZE); //copy blockAllocMap blocks from disk to buffer
+    }
+
     for (int i=0; i<BUFFER_CAPACITY;i++)
     {
         metainfo[i].free=true;
@@ -19,7 +30,15 @@ StaticBuffer::StaticBuffer()
 //stage-6
 // Writing back all modified blocks on system exit
 StaticBuffer::~StaticBuffer()
-{
+{   
+    for (int i=0; i<4; i++)  //i is basically bmap value 
+    {
+        //here its copy and then write contents
+        unsigned char buffer[BLOCK_SIZE]; //since u are writing contents better to define everytime else it will get overwritten
+        memcpy(buffer, blockAllocMap+(i*BLOCK_SIZE), BLOCK_SIZE); //copy blockAllocMap blocks from disk to buffer
+        Disk::writeBlock(buffer, i);
+    }
+    
     for (int i=0; i<BUFFER_CAPACITY;i++)
     {
         if (metainfo[i].free==false && metainfo[i].dirty==true)
