@@ -274,7 +274,7 @@ int BlockBuffer::loadBlockAndGetBufferPtr( unsigned char ** bufferPtr)
 
             for(int i=0; i<BUFFER_CAPACITY;i++)
             {
-                  if (StaticBuffer::metainfo[i].free==true && i!=bufferNum)
+                  if (StaticBuffer::metainfo[i].free==false && i!=bufferNum)
                   {
                         StaticBuffer::metainfo[i].timeStamp+=1;
                   } 
