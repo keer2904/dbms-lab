@@ -110,14 +110,14 @@ int BlockAccess::renameRelation(char oldName[ATTR_SIZE], char newName[ATTR_SIZE]
     Attribute rec[RELCAT_NO_ATTRS];
     bufferRel.getRecord(rec, recOldId.slot);  
 
-    strcpy(rec[RELCAT_REL_NAME_INDEX].sVal,newName); //it is the index where relname of rel catalog is present BUT WHY ARE YOU CHANGING NAME OF REL CAT?
+    strcpy(rec[RELCAT_REL_NAME_INDEX].sVal,newName); //it is the index where relname of rel catalog is present 
 
     bufferRel.setRecord(rec, recOldId.slot);
 
     //CHANGING RELNAME IN ATTRIBUTE CATALOG
 
     RelCacheTable::resetSearchIndex(ATTRCAT_RELID);  
-    int numAttrs= rec[RELCAT_NO_ATTRIBUTES_INDEX].nVal ;//pls learn the structure of these INDEX where is it present anol
+    int numAttrs= rec[RELCAT_NO_ATTRIBUTES_INDEX].nVal ;
 
     for (int i=0; i<numAttrs;i++ )
     {
@@ -145,8 +145,6 @@ int BlockAccess::renameAttribute(char relName[ATTR_SIZE], char oldName[ATTR_SIZE
     strcpy(relNameAttr.sVal,relName);
 
     RecId recid= BlockAccess::linearSearch(RELCAT_RELID,(char*)RELCAT_ATTR_RELNAME,relNameAttr,EQ); //checking in relation catalog 
-    //instead of just writing "RelName" do RELCAT_ATTR_RELNAME but what does it mean
-    //also why char* typecasting is required it gave me warning
 
     if (recid.block==-1 && recid.slot==-1)
     {
@@ -171,7 +169,7 @@ int BlockAccess::renameAttribute(char relName[ATTR_SIZE], char oldName[ATTR_SIZE
         RecBuffer buff(recOldId.block);
         buff.getRecord(rec,recOldId.slot);
 
-        if (strcmp(rec[ATTRCAT_ATTR_NAME_INDEX].sVal,oldName)==0)  //what is ATTRCAT_ATTR_NAME_INDEX what is present in each index of this rec Attribute
+        if (strcmp(rec[ATTRCAT_ATTR_NAME_INDEX].sVal,oldName)==0) 
         {
             attrRecId=recOldId;
             strcpy(rec[ATTRCAT_ATTR_NAME_INDEX].sVal,newName);

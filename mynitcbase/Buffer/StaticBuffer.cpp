@@ -29,7 +29,11 @@ StaticBuffer::~StaticBuffer()
     }
 }
 
-//stage-3
+//stage-6 adds the below to getFreeBuffer()
+ // if a free buffer is not available, find the buffer with the largest timestamp  
+//     IF IT IS DIRTY, write back to the disk using Disk::writeBlock()
+//     set bufferNum = index of this buffer
+// update the metaInfo entry corresponding to bufferNum with free:false, dirty:false, blockNum:the input block number, timeStamp:0.
 int StaticBuffer::getFreeBuffer(int blockNum)
 {
     if (blockNum < 0 || blockNum > DISK_BLOCKS)
@@ -47,7 +51,7 @@ int StaticBuffer::getFreeBuffer(int blockNum)
             break;
         }
     }
-
+// if a free buffer is not available, find the buffer with the largest timestamp  
     if (allocatedBuffer==BUFFER_CAPACITY)
     {
         int max_time=-1;
@@ -59,7 +63,7 @@ int StaticBuffer::getFreeBuffer(int blockNum)
                 max_time=metainfo[i].timeStamp;
             }
         }
-
+//     IF IT IS DIRTY, write back to the disk using Disk::writeBlock()
         if (metainfo[max_index].dirty==true)
         {
             Disk::writeBlock(StaticBuffer::blocks[max_index], metainfo[max_index].blockNum);
@@ -75,13 +79,7 @@ int StaticBuffer::getFreeBuffer(int blockNum)
     return allocatedBuffer;
 }
 
-//stage-6 adds the below to getFreeBuffer()
- // if a free buffer is not available,
-//     find the buffer with the largest timestamp
-//     IF IT IS DIRTY, write back to the disk using Disk::writeBlock()
-//     set bufferNum = index of this buffer
-// update the metaInfo entry corresponding to bufferNum with
-// free:false, dirty:false, blockNum:the input block number, timeStamp:0.
+
 
 //stage-3
 int StaticBuffer::getBufferNum(int block_num)

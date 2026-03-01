@@ -112,7 +112,7 @@ int RecBuffer::getSlotMap(unsigned char *slotMap)
       return SUCCESS;
 }
 
-//stage-6 till now no implementation of set record pls delete it from before stages
+//stage-6 
 
 int RecBuffer::setRecord(union Attribute* rec, int slotNum)
 {
@@ -163,8 +163,8 @@ int RecBuffer::setRecord(union Attribute* rec, int slotNum)
 
 //stage-6 has added  the following
 // if present (!=E_BLOCKNOTINBUFFER),
-        // set the timestamp of the corresponding buffer to 0 and increment the
-        // timestamps of all other occupied buffers in BufferMetaInfo.
+// set the timestamp of the corresponding buffer to 0 and increment the
+// timestamps of all other occupied buffers in BufferMetaInfo.
 
 int BlockBuffer::loadBlockAndGetBufferPtr( unsigned char ** bufferPtr)
 {
@@ -173,7 +173,8 @@ int BlockBuffer::loadBlockAndGetBufferPtr( unsigned char ** bufferPtr)
       if (bufferNum != E_BLOCKNOTINBUFFER)
       {
             StaticBuffer::metainfo[bufferNum].timeStamp=0; // no need of struct BufferMetaInfo StaticBuffer::metainfo[BUFFER_CAPACITY]; but why??
-
+            // set the timestamp of the corresponding buffer to 0 and increment the
+        // timestamps of all other occupied buffers in BufferMetaInfo.
             for(int i=0; i<BUFFER_CAPACITY;i++)
             {
                   if (StaticBuffer::metainfo[i].free==false && i!=bufferNum)
