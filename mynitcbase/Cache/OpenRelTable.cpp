@@ -155,9 +155,6 @@ OpenRelTable::~OpenRelTable()
             free(x);
             x=nextentry; //if next entry is null loop will stop else it will keep looping and freeing
         }
-
-        RelCacheTable::relCache[i]=nullptr;
-        AttrCacheTable::attrCache[i]=nullptr;
     }
 }
 
