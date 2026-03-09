@@ -134,8 +134,10 @@ OpenRelTable::OpenRelTable()
 
 }
 
+//STAGE-8
 OpenRelTable::~OpenRelTable()
 {
+    //stage-5
     for(int i=2; i<MAX_OPEN;i++)  // close all open relations (from rel-id = 2 onwards)
     {
         if(tableMetaInfo[i].free==false)
@@ -143,29 +145,54 @@ OpenRelTable::~OpenRelTable()
             OpenRelTable::closeRel(i);
         }
     }
-    // free the memory allocated for rel-id 0 and 1 in the caches
-    for (int i=0;i<2;i++)  //if we are just closing from 2 onwards why are we freeing first first 2 relations?
+    /**** Closing the catalog relations in the relation cache ****/
+
+    //releasing the relation cache entry of the attribute catalog
+
+    if (RelCacheTable::relCache[ATTRCAT_RELID]->dirty) //RelCatEntry of the ATTRCAT_RELID-th RelCacheEntry has been modified
     {
-        free(RelCacheTable::relCache[i]);
-        //freeing attribute cache for every relation
+        RelCatEntry relCatEntry= RelCacheTable::relCache[ATTRCAT_RELID]->relCatEntry;   //Get the Relation Catalog entry from RelCacheTable::relCache
+        Attribute relCatRecord[RELCAT_NO_ATTRS];   
+        RelCacheTable::relCatEntryToRecord(&relCatEntry,relCatRecord); 
+        RecId recid=RelCacheTable::relCache[ATTRCAT_RELID]->recId;
+        RecBuffer relCatBlock(recid.block);
+        relCatBlock.setRecord(relCatRecord,recid.slot);
+    }
+    free(RelCacheTable::relCache[ATTRCAT_RELID]);   // free the memory dynamically allocated to this RelCacheEntry
+    
+    //releasing the relation cache entry of the relation catalog
+    if (RelCacheTable::relCache[RELCAT_RELID]->dirty)
+    {
+
+        RelCatEntry relCatEntry= RelCacheTable::relCache[RELCAT_RELID]->relCatEntry;   //Get the Relation Catalog entry from RelCacheTable::relCache
+        Attribute relCatRecord[RELCAT_NO_ATTRS];   
+        RelCacheTable::relCatEntryToRecord(&relCatEntry,relCatRecord); 
+        RecId recid=RelCacheTable::relCache[RELCAT_RELID]->recId;
+        RecBuffer relCatBlock(recid.block);
+        relCatBlock.setRecord(relCatRecord,recid.slot);
+    }
+    free(RelCacheTable::relCache[RELCAT_RELID]);  // free the memory dynamically allocated for this RelCacheEntry
+
+    //stage-5
+    // free the memory allocated for the attribute cache entries of the relation catalog and the attribute catalog
+    
+    AttrCacheEntry *temp, *next;
+    for (int i=0;i<2;i++)  
+    {
         AttrCacheEntry* x= AttrCacheTable::attrCache[i];
         for (x; x!=nullptr; ) 
         {
             AttrCacheEntry* nextentry=x->next;
             free(x);
-            x=nextentry; //if next entry is null loop will stop else it will keep looping and freeing
+            x=nextentry; 
         }
-
-        RelCacheTable::relCache[i]=nullptr;
-        AttrCacheTable::attrCache[i]=nullptr;
     }
 }
-
-int OpenRelTable::getRelId(char relName[ATTR_SIZE])
+int OpenRelTable::getRelId(char relName[ATTR_SIZE])  //Only gives relid if slot is occupied and if it matches the relname 
 {
     for(int i=0; i<MAX_OPEN; i++) //MAX_OPEN is the size of tableMetainfo array
     {
-        if (strcmp(tableMetaInfo[i].relName,relName)==0) //is tableMetaInfo[i].free==false really needed 
+        if ((tableMetaInfo[i].free == false) && strcmp(relName, tableMetaInfo[i].relName) == 0) //is tableMetaInfo[i].free==false really needed  YES IT IS NEEDED DONT GO PURE BY THE GUIDANCE GIVEN IN DOCUMENTATION
         {
             return i;
         }
@@ -303,15 +330,14 @@ int OpenRelTable::closeRel(int relId)
         RecId recId= RelCacheTable::relCache[relId]->recId;
         RecBuffer relCatBlock(recId.block);
 
-        relCatBlock.setRecord(record, recId.slot);
+        relCatBlock.setRecord(record, recId.slot); //before closing table record shud be in table itself 
     }
+        
+    //stage-5
+    free(RelCacheTable::relCache[relId]); 
 
     /****** Releasing the Attribute Cache entry of the relation ******/
-
-
-    //stage-5
-
-    free(RelCacheTable::relCache[relId]);  //IS THIS REQUIRED??
+ 
     for(AttrCacheEntry* entry=AttrCacheTable::attrCache[relId]; entry !=nullptr ; )
     {
         AttrCacheEntry* nextEntry=entry->next;
@@ -319,8 +345,7 @@ int OpenRelTable::closeRel(int relId)
         entry=nextEntry; //dont do entry->next;
     }
 
-    OpenRelTable::tableMetaInfo[relId].free=true;  
-    //Do you need to "free" the relName field?  No, the next openRel() call will simply overwrite the old relName with strcpy()
+    OpenRelTable::tableMetaInfo[relId].free=true;  //Do you need to "free" the relName field?  No, the next openRel() call will simply overwrite the old relName with strcpy()
     RelCacheTable::relCache[relId]=nullptr;
     AttrCacheTable::attrCache[relId]=nullptr;
     

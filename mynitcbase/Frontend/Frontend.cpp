@@ -4,23 +4,23 @@
 #include <iostream>
 
 int Frontend::create_table(char relname[ATTR_SIZE], int no_attrs, char attributes[][ATTR_SIZE],
-                           int type_attrs[]) {
-  // Schema::createRel
-  return SUCCESS;
+                           int type_attrs[]) 
+{
+    return Schema::createRel(relname,no_attrs,attributes,type_attrs);  
 }
 
-int Frontend::drop_table(char relname[ATTR_SIZE]) {
-  // Schema::deleteRel
-  return SUCCESS;
+int Frontend::drop_table(char relname[ATTR_SIZE]) 
+{
+    return Schema::deleteRel(relname);
 }
 
-int Frontend::open_table(char relname[ATTR_SIZE]) {
-  // Schema::openRel
+int Frontend::open_table(char relname[ATTR_SIZE]) 
+{
   return Schema::openRel(relname);
 }
 
-int Frontend::close_table(char relname[ATTR_SIZE]) {
-  // Schema::closeRel
+int Frontend::close_table(char relname[ATTR_SIZE]) 
+{
   return Schema::closeRel(relname);
 }
 

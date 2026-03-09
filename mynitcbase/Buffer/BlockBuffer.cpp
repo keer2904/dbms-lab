@@ -107,10 +107,8 @@ int BlockBuffer::setHeader(struct HeadInfo *head)
             return ret;
       }
 
-      // cast bufferPtr to type HeadInfo* but WHY?
-      struct HeadInfo *bufferHeader =(struct HeadInfo *) bufferPtr;
-
-      //why dont we need memcpy here??
+      // cast bufferPtr to type HeadInfo*
+      struct HeadInfo *bufferHeader =(struct HeadInfo *) bufferPtr;  //BUFFERpTR IS UNSIGNED CHAR 
 
       bufferHeader->blockType=head->blockType;
       bufferHeader->lblock=head->lblock;
@@ -295,7 +293,7 @@ int BlockBuffer::loadBlockAndGetBufferPtr( unsigned char ** bufferPtr)
       return SUCCESS;
 }
 
-
+//stage -7
 int BlockBuffer::setBlockType(int blockType)
 {
       unsigned char *bufferPtr;
@@ -307,12 +305,11 @@ int BlockBuffer::setBlockType(int blockType)
       }
 
       ////store the input block type in the first 4 bytes of the buffer.
-      *((int32_t *)bufferPtr)=blockType; //learn this syntax WHY SHUD WE TYPECAST
+      *((int32_t *)bufferPtr)=blockType; //learn this syntax 
 
       //update the StaticBuffer::blockAllocMap entry corresponding to the object's block number to `blockType`.
       StaticBuffer::blockAllocMap[this->blockNum]=blockType; 
-      //find out the strucctue of this why are we storing block type into block num  
-
+       
       int x=StaticBuffer::setDirtyBit(this->blockNum);
       if (x!=SUCCESS)
       {
@@ -338,13 +335,12 @@ int BlockBuffer::getFreeBlock(int blockType)
             return E_DISKFULL;
       }
 
-      this->blockNum=block; //please understand the difference between both lhs and rhs
-
+      this->blockNum=block; 
       int ret=StaticBuffer::getFreeBuffer(block);
 
       struct HeadInfo head;
 
-      head.pblock=-1; //no need of arrows or & here unlike in setHeader??
+      head.pblock=-1; 
       head.rblock=-1;
       head.lblock=-1;
       head.numAttrs=0;
@@ -371,4 +367,22 @@ int BlockBuffer::getBlockNum()
 {
 
     return this->blockNum;
+}
+
+void BlockBuffer::releaseBlock()
+{
+
+      if (blockNum == INVALID_BLOCKNUM || StaticBuffer::blockAllocMap[blockNum]==UNUSED_BLK)     // if blockNum is INVALID_BLOCKNUM (-1), or it is invalidated already, do nothing
+      {
+            return;
+      }
+
+      int bufferNum= StaticBuffer::getBufferNum(blockNum);
+      if (bufferNum==E_BLOCKNOTINBUFFER)  //if the block is not currently loaded in the buffer
+      {
+            return;
+      }
+      StaticBuffer::metainfo[bufferNum].free=true;  // free the buffer by setting the free flag of its to true
+      StaticBuffer::blockAllocMap[this->blockNum]=UNUSED_BLK;// free the block in disk by setting the data type of the entry corresponding to the block number to UNUSED_BLK.
+      this->blockNum=INVALID_BLOCKNUM;
 }
