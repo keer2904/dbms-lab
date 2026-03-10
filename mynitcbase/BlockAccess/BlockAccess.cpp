@@ -476,3 +476,64 @@ int BlockAccess::deleteRelation(char relName[ATTR_SIZE])
 
     return SUCCESS;
 }
+
+//stage-9
+//NOTE: the caller is expected to allocate space for the argument `record` based on the size of the relation. 
+//This function will only copy the result of the projection onto the array pointed to by the argument.
+
+int BlockAccess::project(int relId, Attribute *record) 
+{
+
+    RecId prevRecId;
+    RelCacheTable::getSearchIndex(relId, &prevRecId);
+    int block=prevRecId.block;      //this wasnt mentioned though
+    int slot= prevRecId.slot;
+
+    if (prevRecId.block == -1 && prevRecId.slot == -1)   //current search index record is invalid
+    {
+        RelCatEntry relCatBuf;
+        RelCacheTable::getRelCatEntry(relId, &relCatBuf);
+        block=relCatBuf.firstBlk;
+        slot=0;
+    }
+    else  //project/search operation is already in progress
+    {
+        block = prevRecId.block;
+        slot = prevRecId.slot+1;
+    }
+
+    while (block != -1)  //finds the next record of the relation
+    {
+        RecBuffer buf(block);  //constructor 2
+        HeadInfo head;
+        buf.getHeader(&head);
+        unsigned char slotMap[head.numSlots];
+        buf.getSlotMap(slotMap);
+        
+        if(slot>=head.numSlots) //no more slots in this block
+        {
+            block = head.rblock;
+            slot=0;
+            // NOTE: if this is the last block, rblock would be -1. this would set block = -1 and fail the loop condition
+        }
+        else if (slotMap[slot]==SLOT_UNOCCUPIED)
+        { 
+            slot++;
+        }
+        else  // (the next occupied slot / record has been found)
+        { 
+            break;
+        }
+    }
+
+    if (block == -1) // (a record was not found. all records exhausted)
+    {
+        return E_NOTFOUND;
+    }
+
+    RecId nextRecId{block, slot}; // nextRecId to store the RecId of the record found
+    RelCacheTable::setSearchIndex(relId, &nextRecId);
+    RecBuffer recbuf(nextRecId.block);
+    recbuf.getRecord(record, nextRecId.slot);
+    return SUCCESS;
+}
