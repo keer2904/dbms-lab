@@ -48,11 +48,12 @@ int Frontend::insert_into_table_values(char relname[ATTR_SIZE], int attr_count, 
   return Algebra::insert(relname, attr_count, attr_values);
 }
 
+//stage-9
 int Frontend::select_from_table(char relname_source[ATTR_SIZE], char relname_target[ATTR_SIZE]) {
   
   return Algebra::project(relname_source,relname_target);
 }
-
+//select id,name from Toys into null 
 int Frontend::select_attrlist_from_table(char relname_source[ATTR_SIZE], char relname_target[ATTR_SIZE],int attr_count, char attr_list[][ATTR_SIZE]) 
 {
   return Algebra::project(relname_source,relname_target,attr_count,attr_list);
@@ -63,11 +64,10 @@ int Frontend::select_from_table_where(char relname_source[ATTR_SIZE], char relna
   // Algebra::select
   return Algebra::select(relname_source,relname_target,attribute,op,value);
 }
-
+//select id,name from Toys into null where stocks>0;
 int Frontend::select_attrlist_from_table_where(char relname_source[ATTR_SIZE], char relname_target[ATTR_SIZE],int attr_count, char attr_list[][ATTR_SIZE],char attribute[ATTR_SIZE], int op, char value[ATTR_SIZE]) 
 {
     // Call select() method of the Algebra Layer with correct arguments to
-  
     char tempStr[]=TEMP;      // create a temporary target relation with name ".temp" (use constant TEMP)
     // TEMP will contain all the attributes of the source relation as it is the result of a select operation
     int ret= Algebra::select(relname_source,tempStr,attribute,op,value);  //understand the attributes
@@ -84,7 +84,8 @@ int Frontend::select_attrlist_from_table_where(char relname_source[ATTR_SIZE], c
       return tempRelId;
     }
 
-    int response= Algebra::project(tempStr, relname_target, attr_count, attr_list); //why did u use this not the other one also how can u just take the calues directly from the main arguments. you didnt even define them 
+    int response= Algebra::project(tempStr, relname_target, attr_count, attr_list); 
+    //why did u use this not the other one also how can u just take the values directly from the main arguments. you didnt even define them 
     
     OpenRelTable::closeRel(tempRelId);
     Schema::deleteRel(tempStr);

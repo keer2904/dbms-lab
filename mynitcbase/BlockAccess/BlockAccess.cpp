@@ -2,8 +2,9 @@
 #include <cstring>
 #include <stdio.h>
 //stage-4
+int BlockAccess::numLinearComparisons;
 
-RecId BlockAccess::linearSearch(int relId, char attrName[ATTR_SIZE],union Attribute attrVal, int op) //why RecId
+RecId BlockAccess::linearSearch(int relId, char attrName[ATTR_SIZE],union Attribute attrVal, int op) 
 {
     RecId prevRecId; //no need of * here
     RelCacheTable::getSearchIndex(relId, &prevRecId); 
@@ -55,6 +56,7 @@ RecId BlockAccess::linearSearch(int relId, char attrName[ATTR_SIZE],union Attrib
         AttrCacheTable::getAttrCatEntry(relId, attrName,&attrCatBuf);
 
         Attribute attrOffset= rec[attrCatBuf.offset];
+        BlockAccess::numLinearComparisons++;
         int cmpVal = compareAttrs(attrOffset, attrVal, attrCatBuf.attrType); //why and what are we comparing??
 
         if (
@@ -196,7 +198,11 @@ int BlockAccess::insert(int relId, Attribute *record)
 
 {
     RelCatEntry relCatEntry;
-    RelCacheTable::getRelCatEntry(relId, &relCatEntry);
+    int ret=RelCacheTable::getRelCatEntry(relId, &relCatEntry);
+    if (ret!=SUCCESS)
+    {
+        return ret;
+    }
     
     int blockNum = relCatEntry.firstBlk; //WHY   //first record block of the relation (from the rel-cat entry)
     
@@ -331,18 +337,52 @@ int BlockAccess::insert(int relId, Attribute *record)
 //NOTE: This function will copy the result of the search to the `record` argument. 
 //The caller should ensure that space is allocated for `record` array based on the number of attributes in the relation.
 
+// int BlockAccess::search(int relId, Attribute *record, char attrName[ATTR_SIZE], Attribute attrVal, int op) 
+// {
+//     RecId recId =BlockAccess::linearSearch(relId,attrName,attrVal,EQ);      //search for the recid corresponding to the attribute with attribute name attrName
+//     if (recId.block==-1 && recId.slot==-1)
+//     {
+//         return E_NOTFOUND;
+//     }
+//     RecBuffer recBuffer(recId.block);       //constructor 2 Copy the record with record id (recId) to the record buffer (record)
+//     recBuffer.getRecord(record,recId.slot);
+//     return SUCCESS;
+// }
+
+//stage-10
 int BlockAccess::search(int relId, Attribute *record, char attrName[ATTR_SIZE], Attribute attrVal, int op) 
 {
-    RecId recId =BlockAccess::linearSearch(relId,attrName,attrVal,EQ);      //search for the recid corresponding to the attribute with attribute name attrName
-    if (recId.block==-1 && recId.slot==-1)
+    
+    RecId recId;
+
+    AttrCatEntry attrCatBuf;
+
+    int ret=AttrCacheTable::getAttrCatEntry(relId,attrName,&attrCatBuf);
+
+    if (ret!=SUCCESS)
+    {
+    return ret;  // if this call returns an error, return the appropriate error code
+    }
+
+    int root=attrCatBuf.rootBlock;
+    if (root==-1)
+    {
+        recId=BlockAccess::linearSearch(relId, attrName, attrVal, op);
+    }
+    else
+    {
+        recId=BPlusTree::bPlusSearch(relId, attrName,attrVal, op);
+    }
+
+    if(recId.block==-1 && recId.slot==-1)
     {
         return E_NOTFOUND;
     }
-    RecBuffer recBuffer(recId.block);       //constructor 2 Copy the record with record id (recId) to the record buffer (record)
-    recBuffer.getRecord(record,recId.slot);
+    
+    RecBuffer recBuf(recId.block);
+    recBuf.getRecord(record, recId.slot);
     return SUCCESS;
 }
-
 
 int BlockAccess::deleteRelation(char relName[ATTR_SIZE]) 
 
@@ -427,9 +467,9 @@ int BlockAccess::deleteRelation(char relName[ATTR_SIZE])
             {
                 RecBuffer nextBlock(head.rblock);
                 HeadInfo righthead;
-                prevBlock.getHeader(&righthead);
+                nextBlock.getHeader(&righthead);
 
-                righthead.rblock=head.lblock;
+                righthead.lblock=head.lblock;
                 nextBlock.setHeader(&righthead);
             } 
             else 
@@ -480,6 +520,8 @@ int BlockAccess::deleteRelation(char relName[ATTR_SIZE])
 //stage-9
 //NOTE: the caller is expected to allocate space for the argument `record` based on the size of the relation. 
 //This function will only copy the result of the projection onto the array pointed to by the argument.
+//This function is used to fetch one record of the relation. Each subsequent call would return the next record until there are no more records to be returned. 
+//Similar to the linearSearch() function you implemented earlier, project() makes use of the searchIndex in the relation cache to keep track of the last
 
 int BlockAccess::project(int relId, Attribute *record) 
 {
@@ -537,3 +579,5 @@ int BlockAccess::project(int relId, Attribute *record)
     recbuf.getRecord(record, nextRecId.slot);
     return SUCCESS;
 }
+
+

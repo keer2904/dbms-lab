@@ -144,3 +144,16 @@ int StaticBuffer::setDirtyBit(int blockNum)
     metainfo[ret].dirty=true;
     return SUCCESS;
 }
+
+//stage-10
+int StaticBuffer::getStaticBlockType(int blockNum)
+{
+    if (blockNum<0 || blockNum>=DISK_BLOCKS)
+    {
+        return E_OUTOFBOUND;
+    }
+
+    unsigned char blockType=blockAllocMap[blockNum];  //Access the entry in block allocation map corresponding to the blockNum argument
+
+    return (int)blockType;
+}

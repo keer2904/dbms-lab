@@ -81,7 +81,7 @@ int Algebra:: insert(char relName[ATTR_SIZE], int nAttrs, char record[][ATTR_SIZ
 
 }
 
-//stage-9
+//stage-9, stage-10
 
 int Algebra::select(char srcRel[ATTR_SIZE], char targetRel[ATTR_SIZE], char attr[ATTR_SIZE], int op, char strVal[ATTR_SIZE]) 
 {
@@ -151,13 +151,16 @@ int Algebra::select(char srcRel[ATTR_SIZE], char targetRel[ATTR_SIZE], char attr
     Attribute record[src_nAttrs];
     RelCacheTable::resetSearchIndex(srcRelId);
    
-    //AttrCacheTable::resetSearchIndex()???
+    AttrCacheTable::resetSearchIndex(srcRelId,attr);
+
+    BPlusTree::numComparisons=0;
+    BlockAccess::numLinearComparisons=0;
     //The BlockAccess::search() function can either do a linearSearch or a B+ tree search. 
     //reset the search index of the relation in the relation cache using RelCacheTable::resetSearchIndex().
     //Reset the search index in the attribute cache for the select condition attribute with name given by the argument `attr`.
     //Both these calls are necessary to ensure that search begins from the first record.
     
-
+//searches the record acc to att=attrVal then it adds to the taregtRel table
     while (BlockAccess::search(srcRelId,record,attr,attrVal,op)==SUCCESS)   //please look into these parameters and see why each of it is taken.
     {
         int ret = BlockAccess::insert(targetRelId, record); 
@@ -170,6 +173,8 @@ int Algebra::select(char srcRel[ATTR_SIZE], char targetRel[ATTR_SIZE], char attr
         }
 
     }
+    printf("Number of BPlus Tree Comparisons: %d\n", BPlusTree::numComparisons);
+    printf("Number of Linear Search Comparisons: %d\n", BlockAccess::numLinearComparisons);
     Schema::closeRel(targetRel);
     return SUCCESS;
 }
