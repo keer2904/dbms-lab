@@ -350,6 +350,7 @@ int BlockAccess::insert(int relId, Attribute *record)
 // }
 
 //stage-10
+// used to either do a B+ search or a linear search depending on the presence of an index
 int BlockAccess::search(int relId, Attribute *record, char attrName[ATTR_SIZE], Attribute attrVal, int op) 
 {
     
@@ -361,7 +362,7 @@ int BlockAccess::search(int relId, Attribute *record, char attrName[ATTR_SIZE], 
 
     if (ret!=SUCCESS)
     {
-    return ret;  // if this call returns an error, return the appropriate error code
+        return ret;  // if this call returns an error, return the appropriate error code
     }
 
     int root=attrCatBuf.rootBlock;

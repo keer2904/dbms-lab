@@ -80,20 +80,23 @@ RecBuffer::RecBuffer(int blockNum) : BlockBuffer::BlockBuffer(blockNum)
 
 
 //stage-10
-// call the corresponding parent constructor
-IndBuffer::IndBuffer(char blockType) : BlockBuffer(blockType){}
 
-// call the corresponding parent constructor
-IndBuffer::IndBuffer(int blockNum) : BlockBuffer(blockNum){}
 
-IndInternal::IndInternal() : IndBuffer('I'){}   // call the corresponding parent constructor. 'I' used to denote IndInternal.
+IndBuffer::IndBuffer(char blockType) : BlockBuffer(blockType){}  
 
-IndInternal::IndInternal(int blockNum) : IndBuffer(blockNum){}    // call the corresponding parent constructor
+IndBuffer::IndBuffer(int blockNum) : BlockBuffer(blockNum){} 
+
+// call their parent class IndBuffer's constructor 1 and constructor 2 respectively 
+//which in turn calls the corresponding BlockBuffer constructors that we implemented earlier
+
+IndInternal::IndInternal() : IndBuffer('I'){}   // already read from an allocated index block
+
+IndInternal::IndInternal(int blockNum) : IndBuffer(blockNum){}   //allocate new index block
+
 
 IndLeaf::IndLeaf() : IndBuffer('L'){}     // this is the way to call parent non-default constructor. 'L' used to denote IndLeaf.
 
-//this is the way to call parent non-default constructor.
-IndLeaf::IndLeaf(int blockNum) : IndBuffer(blockNum){}
+IndLeaf::IndLeaf(int blockNum) : IndBuffer(blockNum){}  //this is the way to call parent non-default constructor.
 
 // load the block header into the argument pointer
 int BlockBuffer::getHeader(struct HeadInfo *head) {
@@ -419,11 +422,9 @@ int IndInternal::getEntry(void *ptr, int indexNum)
       {
             return ret;
       }
-      struct InternalEntry *internalEntry = (struct InternalEntry *)ptr;  //// typecast the void pointer to an internal entry pointer
+      struct InternalEntry *internalEntry = (struct InternalEntry *)ptr;  // typecast the void pointer to an internal entry pointer
 
-      /* the indexNum'th entry will begin at an offset of
-            HEADER_SIZE + (indexNum * (sizeof(int) + ATTR_SIZE) )         [why?]
-            from bufferPtr */
+      // the indexNum'th entry will begin at an offset of HEADER_SIZE + (indexNum * (sizeof(int) + ATTR_SIZE(16+4)) ) from bufferPtr 
       unsigned char *entryPtr = bufferPtr + HEADER_SIZE + (indexNum * 20);
 
       /*
@@ -455,9 +456,9 @@ int IndLeaf::getEntry(void *ptr, int indexNum)
       {
             return ret;
       }
-      //the indexNum'th entry will begin at an offset of HEADER_SIZE + (indexNum * LEAF_ENTRY_SIZE)  from bufferPtr 
-      unsigned char *entryPtr = bufferPtr + HEADER_SIZE + (indexNum * LEAF_ENTRY_SIZE);   // copy the indexNum'th Index entry in buffer to memory ptr using memcpy
-      memcpy((struct Index *)ptr, entryPtr, LEAF_ENTRY_SIZE);
+      //the indexNum'th entry will begin at an offset of HEADER_SIZE + (indexNum * LEAF_ENTRY_SIZE)   
+      unsigned char *entryPtr = bufferPtr + HEADER_SIZE + (indexNum * LEAF_ENTRY_SIZE);   //LEAF_ENTRY_SIZE = 32
+      memcpy((struct Index *)ptr, entryPtr, LEAF_ENTRY_SIZE);  // copy the indexNum'th Index entry in buffer to memory ptr using memcpy
 
       return SUCCESS;
 }

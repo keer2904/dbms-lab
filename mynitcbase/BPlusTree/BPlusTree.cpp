@@ -12,11 +12,11 @@ RecId BPlusTree::bPlusSearch(int relId, char attrName[ATTR_SIZE], Attribute attr
 
     IndexId searchIndex;  //used to store search index for attrName.
 
-    AttrCacheTable::getSearchIndex(relId,attrName,&searchIndex);   //why are we not equating to ret and doing if ret!=SUCCESS here
+    AttrCacheTable::getSearchIndex(relId,attrName,&searchIndex);   
     
     AttrCatEntry attrCatEntry;
 
-    AttrCacheTable::getAttrCatEntry(relId, attrName, &attrCatEntry); //why are we not equating to ret and doing if ret!=SUCCESS here
+    AttrCacheTable::getAttrCatEntry(relId, attrName, &attrCatEntry); 
     
     int block, index;
 
@@ -116,13 +116,16 @@ RecId BPlusTree::bPlusSearch(int relId, char attrName[ATTR_SIZE], Attribute attr
 
             }
 
-            if (i<intHead.numEntries) //Move to the left child of that entry
+            if (i<intHead.numEntries) //Move to the left child of that entry bcoz i has still not reach intHead.numEntries
+            //lets say right now it went thru break statement bcoz your value is 504 
+            //and you r searching for records greater than 500
+            //if you go left child of 504 u can still have chance of those records 
             {
                 block=intEntry.lChild;
             }
             else
             {
-                block=intEntry.rChild;  //Move to the right child of the last entry of the block
+                block=intEntry.rChild;  //Move to the right child of the entry of the block
             }
         }
     }
