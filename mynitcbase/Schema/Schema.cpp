@@ -154,3 +154,55 @@ int Schema::deleteRel(char *relName)
        if the BlockBuffer was initialized with an invalid block number.
     */
 }
+
+
+int Schema::createIndex(char relName[ATTR_SIZE],char attrName[ATTR_SIZE])
+{
+    if (strcmp(relName,"RELATIONCAT")==0 || strcmp(relName,"ATTRIBUTECAT")==0)
+    {
+        return E_NOTPERMITTED;
+    }
+    
+    int relId= OpenRelTable::getRelId(relName);
+
+    if (relId ==E_RELNOTOPEN)
+    {
+        return E_RELNOTOPEN;
+    }
+    return BPlusTree::bPlusCreate(relId, attrName);
+}
+
+int Schema::dropIndex(char *relName, char *attrName) 
+{
+    if (strcmp(relName,"RELATIONCAT")==0 || strcmp(relName,"ATTRIBUTECAT")==0)
+    {
+        return E_NOTPERMITTED;
+    }
+    
+    int relId= OpenRelTable::getRelId(relName);
+
+    if (relId ==E_RELNOTOPEN)
+    {
+        return E_RELNOTOPEN;
+    }
+
+    AttrCatEntry attrCatBuf;
+    int retVal=AttrCacheTable::getAttrCatEntry(relId, attrName,&attrCatBuf);
+    if (retVal!=SUCCESS)
+    {
+        return E_ATTRNOTEXIST;
+    }
+
+    int rootBlock = attrCatBuf.rootBlock;
+
+    if (rootBlock == -1)  //attribute does not have an index 
+    {
+        return E_NOINDEX;
+    }
+    
+    BPlusTree::bPlusDestroy(rootBlock);     // destroy the bplus tree rooted at rootBlock 
+    attrCatBuf.rootBlock=-1;
+    AttrCacheTable::setAttrCatEntry(relId, attrName,&attrCatBuf);
+
+    return SUCCESS;
+}

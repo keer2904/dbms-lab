@@ -303,7 +303,7 @@ int OpenRelTable::openRel(char relName[ATTR_SIZE])
 }
 
 
-//stage-5, stage-7 
+//stage-5, stage-7, stage-11
 int OpenRelTable::closeRel(int relId)
 {
     if(relId==RELCAT_RELID || relId==ATTRCAT_RELID)
@@ -332,23 +332,32 @@ int OpenRelTable::closeRel(int relId)
 
         relCatBlock.setRecord(record, recId.slot); //before closing table record shud be in table itself 
     }
-        
-    //stage-5
     free(RelCacheTable::relCache[relId]); 
+    RelCacheTable::relCache[relId]=nullptr;
 
     /****** Releasing the Attribute Cache entry of the relation ******/
  
     for(AttrCacheEntry* entry=AttrCacheTable::attrCache[relId]; entry !=nullptr ; )
     {
         AttrCacheEntry* nextEntry=entry->next;
-        free(entry);
-        entry=nextEntry; //dont do entry->next;
-    }
+        if (entry->dirty)
+        {
+            AttrCatEntry attrCatEntry=entry->attrCatEntry;
+            Attribute attrCatRecord[ATTRCAT_NO_ATTRS];
+            AttrCacheTable::attrCatEntryToRecord(&attrCatEntry,attrCatRecord);
 
-    OpenRelTable::tableMetaInfo[relId].free=true;  //Do you need to "free" the relName field?  No, the next openRel() call will simply overwrite the old relName with strcpy()
-    RelCacheTable::relCache[relId]=nullptr;
+            RecId recId=entry->recId;
+            RecBuffer recBuffer(recId.block);
+            recBuffer.setRecord(attrCatRecord,recId.slot);
+        }
+        free(entry);
+        entry=nextEntry; 
+    }
     AttrCacheTable::attrCache[relId]=nullptr;
+
+    /****** Updating metadata in the Open Relation Table of the relation  ******/
+
+    OpenRelTable::tableMetaInfo[relId].free=true;  //Do you need to "free" the relName field?  No, the next openRel() call will simply overwrite the old relName with strcpy()    
     
     return SUCCESS;
-
 }

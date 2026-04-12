@@ -222,9 +222,9 @@ int BlockAccess::insert(int relId, Attribute *record)
         // get header of block(blockNum) using RecBuffer::getHeader() function
         struct HeadInfo head;
         currBlock.getHeader(&head); 
-
+    
         // get slot map of block(blockNum) using RecBuffer::getSlotMap() function
-        unsigned char slotMap[numOfSlots];
+        unsigned char slotMap[head.numSlots];
         currBlock.getSlotMap(slotMap);
 
         int freeSlot=-1;
@@ -331,7 +331,29 @@ int BlockAccess::insert(int relId, Attribute *record)
     insertblock.setHeader(&header);
     relCatEntry.numRecs++;
     RelCacheTable::setRelCatEntry(relId,&relCatEntry);
-    return SUCCESS;
+    
+    //B* Tree Insertions
+
+    int flag = SUCCESS;
+
+    for (int i=0; i<numOfAttributes;i++)
+    {
+        
+        AttrCatEntry attrCatBuf;
+        AttrCacheTable::getAttrCatEntry(relId, i,&attrCatBuf);   //i=offset
+        int rootBlock=attrCatBuf.rootBlock;
+        if(rootBlock != -1)
+        {
+            int retVal = BPlusTree::bPlusInsert(relId, attrCatBuf.attrName,record[i], rec_id);      //insert the new record into the attribute's bplus tree
+
+            if (retVal == E_DISKFULL) 
+            {
+                flag = E_INDEX_BLOCKS_RELEASED;
+            }
+        }
+    }
+
+    return flag;
 }
 //stage-8
 //NOTE: This function will copy the result of the search to the `record` argument. 
@@ -396,7 +418,7 @@ int BlockAccess::deleteRelation(char relName[ATTR_SIZE])
     RelCacheTable::resetSearchIndex(RELCAT_RELID);
     Attribute relNameAttr; // (stores relName as type union Attribute)
     strcpy(relNameAttr.sVal,relName);
-    RecId recId=BlockAccess::linearSearch(RELCAT_RELID,(char *)"RelName",relNameAttr,EQ);  //do we do char*?? typecasting
+    RecId recId=BlockAccess::linearSearch(RELCAT_RELID,(char *)RELCAT_ATTR_RELNAME,relNameAttr,EQ);  //do we do char*?? typecasting
 
     if (recId.block==-1 && recId.slot==-1)
     {
@@ -429,7 +451,7 @@ int BlockAccess::deleteRelation(char relName[ATTR_SIZE])
     int numberOfAttributesDeleted = 0;
 
     while(true) {
-        RecId attrCatRecId = BlockAccess::linearSearch(ATTRCAT_RELID,(char *)"RelName",relNameAttr,EQ);
+        RecId attrCatRecId = BlockAccess::linearSearch(ATTRCAT_RELID,(char *)ATTRCAT_ATTR_RELNAME,relNameAttr,EQ);
         if (attrCatRecId.block==-1 && attrCatRecId.slot==-1)
         {
             break;
@@ -479,14 +501,14 @@ int BlockAccess::deleteRelation(char relName[ATTR_SIZE])
                 RelCatEntry relCatEntryBuffer;
                 RelCacheTable::getRelCatEntry(ATTRCAT_RELID,&relCatEntryBuffer);
                 relCatEntryBuffer.lastBlk=head.lblock;
+    
             }
-
             recbuffer.releaseBlock(); //Since the attribute catalog will never be empty(why?), we do not need to handle the case of the linked list becoming empty 
         }
-        // (the following part is only relevant once indexing has been implemented)
-        // if index exists for the attribute (rootBlock != -1), call bplus destroy
-        if (rootBlock != -1) {
-            // delete the bplus tree rooted at rootBlock using BPlusTree::bPlusDestroy()
+        
+        if (rootBlock != -1) 
+        {    
+            BPlusTree::bPlusDestroy(rootBlock);     // delete the bplus tree rooted at rootBlock
         }
     }
 
