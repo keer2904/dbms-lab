@@ -9,3 +9,4 @@ create table h(id NUM);
 create table i(id NUM);
 create table j(id NUM);
 create table k(id NUM);
+# The JOIN acts as a validation filter — it ensures the result contains only locations that are officially registered in the Locations table.

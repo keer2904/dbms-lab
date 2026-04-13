@@ -92,19 +92,33 @@ int Frontend::select_attrlist_from_table_where(char relname_source[ATTR_SIZE], c
     Schema::deleteRel(tempStr);
     return response;
 }
-int Frontend::select_from_join_where(char relname_source_one[ATTR_SIZE], char relname_source_two[ATTR_SIZE],
-                                     char relname_target[ATTR_SIZE],
-                                     char join_attr_one[ATTR_SIZE], char join_attr_two[ATTR_SIZE]) {
-  // Algebra::join
-  return SUCCESS;
+int Frontend::select_from_join_where(char relname_source_one[ATTR_SIZE], char relname_source_two[ATTR_SIZE],char relname_target[ATTR_SIZE],char join_attr_one[ATTR_SIZE], char join_attr_two[ATTR_SIZE]) 
+{
+    return Algebra::join(relname_source_one,relname_source_two,relname_target,join_attr_one,join_attr_two);
 }
 
-int Frontend::select_attrlist_from_join_where(char relname_source_one[ATTR_SIZE], char relname_source_two[ATTR_SIZE],
-                                              char relname_target[ATTR_SIZE],
-                                              char join_attr_one[ATTR_SIZE], char join_attr_two[ATTR_SIZE],
-                                              int attr_count, char attr_list[][ATTR_SIZE]) {
-  // Algebra::join + project
-  return SUCCESS;
+
+int Frontend::select_attrlist_from_join_where(char relname_source_one[ATTR_SIZE], char relname_source_two[ATTR_SIZE],char relname_target[ATTR_SIZE],char join_attr_one[ATTR_SIZE], char join_attr_two[ATTR_SIZE],int attr_count, char attr_list[][ATTR_SIZE]) 
+{ 
+  char tempStr[]=TEMP;      // create a temporary target relation with name TEMP.
+  int retVal=Algebra::join(relname_source_one,relname_source_two,tempStr,join_attr_one,join_attr_two);  //tempStr contains all attributes of the source relations except the join attribute of the second source relation
+
+  if (retVal!=SUCCESS)
+  {
+    return retVal;
+  }
+
+  int tempRelId=OpenRelTable::openRel(tempStr);
+  if (tempRelId<0)    // if open fails,
+  {
+    Schema::deleteRel(tempStr);
+    return tempRelId;
+  }
+
+  int ret=Algebra::project(tempStr,relname_target,attr_count,attr_list);   // The final target relation contains only those attributes mentioned in attr_list
+  OpenRelTable::closeRel(tempRelId);
+  Schema::deleteRel(tempStr);
+  return ret;
 }
 
 int Frontend::custom_function(int argc, char argv[][ATTR_SIZE]) {
