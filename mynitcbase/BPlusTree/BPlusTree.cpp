@@ -356,7 +356,7 @@ int BPlusTree::findLeafToInsert(int rootBlock, Attribute attrVal, int attrType)
         if (i==internalHead.numEntries) 
         {
             InternalEntry ptr;
-            internalBlk.getEntry(&ptr,internalHead.numEntries-1);  //why internalHead.numEntries-1
+            internalBlk.getEntry(&ptr,internalHead.numEntries-1);  
             blockNum=ptr.rChild;
         } 
         else 
@@ -384,7 +384,8 @@ int BPlusTree::insertIntoLeaf(int relId, char attrName[ATTR_SIZE], int blockNum,
 
     // Find where to insert
     int insertPos = 0;
-    while (insertPos < leafHead.numEntries) {
+    while (insertPos < leafHead.numEntries) 
+    {
         leafBlk.getEntry(&leafEntry, insertPos);
         if (compareAttrs(leafEntry.attrVal, indexEntry.attrVal, attrCatBuf.attrType) >= 0)
             break;
@@ -392,13 +393,14 @@ int BPlusTree::insertIntoLeaf(int relId, char attrName[ATTR_SIZE], int blockNum,
     }
 
     // Build the final array
-    for (int i = 0; i <= leafHead.numEntries; i++) {
+    for (int i = 0; i <= leafHead.numEntries; i++) 
+    {
         if (i < insertPos)
             leafBlk.getEntry(&indices[i], i);
         else if (i == insertPos)
             indices[i] = indexEntry;
         else
-            leafBlk.getEntry(&indices[i], i - 1);  // shift by 1 why?
+            leafBlk.getEntry(&indices[i], i - 1);  
     }
 
     if (leafHead.numEntries != MAX_KEYS_LEAF)       // (leaf block has not reached max limit)
@@ -407,7 +409,7 @@ int BPlusTree::insertIntoLeaf(int relId, char attrName[ATTR_SIZE], int blockNum,
         leafBlk.setHeader(&leafHead);
         for (int k=0; k<leafHead.numEntries;k++)
         {
-            leafBlk.setEntry(&indices[k], k);           //what is indices[k]
+            leafBlk.setEntry(&indices[k], k);           
         }
         return SUCCESS;
     }
@@ -430,7 +432,7 @@ int BPlusTree::insertIntoLeaf(int relId, char attrName[ATTR_SIZE], int blockNum,
         internalEntry.attrVal= indices[MIDDLE_INDEX_LEAF].attrVal;
         internalEntry.lChild = blockNum;
         internalEntry.rChild = newRightBlk; 
-        ret=insertIntoInternal(relId,attrName,leafHead.pblock,internalEntry);   //why parentblock?
+        ret=insertIntoInternal(relId,attrName,leafHead.pblock,internalEntry);   
     } 
     else 
     {
@@ -499,7 +501,8 @@ int BPlusTree::insertIntoInternal(int relId, char attrName[ATTR_SIZE], int intBl
 
     // Find insertion point
     int insertPos = 0;
-    while (insertPos < blockHeader.numEntries) {
+    while (insertPos < blockHeader.numEntries) 
+    {
         intBlk.getEntry(&tempEntry, insertPos);
         if (compareAttrs(tempEntry.attrVal, intEntry.attrVal, attrCatBuf.attrType) >= 0)
             break;
@@ -507,18 +510,21 @@ int BPlusTree::insertIntoInternal(int relId, char attrName[ATTR_SIZE], int intBl
     }
 
     // Build the final array
-    for (int i = 0; i <= blockHeader.numEntries; i++) {
+    for (int i = 0; i <= blockHeader.numEntries; i++) 
+    {
         if (i < insertPos)
             intBlk.getEntry(&internalEntries[i], i);
         else if (i == insertPos)
             internalEntries[i] = intEntry;
-        else {
+        else 
+        {
             intBlk.getEntry(&internalEntries[i], i - 1);  // shift by 1
         }
     }
 
     // Fix the lChild of entry AFTER the inserted one
-    if (insertPos < blockHeader.numEntries) {
+    if (insertPos < blockHeader.numEntries) 
+    {
         internalEntries[insertPos + 1].lChild = intEntry.rChild;
     }
 
@@ -590,7 +596,7 @@ int BPlusTree::splitInternal(int intBlockNum, InternalEntry internalEntries[])
     leftBlk.getHeader(&leftBlkHeader);
 
     // set rightBlkHeader with the following values
-    rightBlkHeader.numEntries=50;       //(MAX_KEYS_INTERNAL)/2   //how 50 for internal and 32 for leaf?
+    rightBlkHeader.numEntries=50;       //(MAX_KEYS_INTERNAL)/2  
     rightBlkHeader.pblock=leftBlkHeader.pblock;
     rightBlk.setHeader(&rightBlkHeader);
     
@@ -609,7 +615,7 @@ int BPlusTree::splitInternal(int intBlockNum, InternalEntry internalEntries[])
         rightBlk.setEntry(&internalEntries[i+51],i);        //internal has 101 entries so it goes till 100 hence 51 and not 50
     }
 
-    int type = StaticBuffer::getStaticBlockType(internalEntries[0].lChild); // block type of a child of any entry of the internalEntries array  WHY ANY ENTRY?
+    int type = StaticBuffer::getStaticBlockType(internalEntries[0].lChild); // block type of a child of any entry of the internalEntries array 
 
 
     //for each child block of the new right block
@@ -644,7 +650,7 @@ int BPlusTree::createNewRoot(int relId, char attrName[ATTR_SIZE], Attribute attr
 
     if (newRootBlkNum == E_DISKFULL) 
     {
-        bPlusDestroy(rChild);       //why destryoing just the rchild??
+        bPlusDestroy(rChild);      
         return E_DISKFULL;
     }
  
