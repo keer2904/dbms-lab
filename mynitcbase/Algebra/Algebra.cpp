@@ -420,10 +420,13 @@ int Algebra::join(char srcRelation1[ATTR_SIZE], char srcRelation2[ATTR_SIZE], ch
         return targetRelId;
     }
 
+    //inserting record
+
     Attribute record1[numOfAttributes1];
     Attribute record2[numOfAttributes2];
     Attribute targetRecord[numOfAttributesInTarget];
     RelCacheTable::resetSearchIndex(srcRelId1);
+
 
     while (BlockAccess::project(srcRelId1, record1) == SUCCESS)     // to get every record of the srcRelation1 one by one
     {
